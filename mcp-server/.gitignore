@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets and live OAuth state -- never commit these.
+# The OAuth approval password and refresh tokens grant vault read/write
+# access through the public tunnel; a `git add -A` without these lines
+# would put them in history.
+.oauth_password
+.remote_token
+oauth_state.json
+*.log

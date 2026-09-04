@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+
+# Vercel local link + any env files
+.vercel/
+.env*
+
+# Logs and local scratch state
+*.log
+.last_status_view
+
+# Secrets. The retired Tailscale-tunnel server that used these is gone, but
+# keep the rules so a future credential file cannot be added by `git add -A`.
+.oauth_password
+.remote_token
+oauth_state.json
+
+.DS_Store

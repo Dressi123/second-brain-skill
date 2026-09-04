@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Second Brain Observatory</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Public+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  /* Claude's own palette (approximated from memory, not a brand-guideline
+     pull -- nudge exact hexes if they're off): warm clay/terracotta on
+     cream, sage as the secondary. */
+  --paper: #F0EEE6;
+  --paper-raised: #FFFFFF;
+  --ink: #262521;
+  --dim: #87867F;
+  --border: #E4DFD1;
+  --clay: #CC785C;
+  --clay-deep: #A85D3F;
+  --clay-soft: rgba(204, 120, 92, 0.16);
+  --sage: #6A8875;
+  --sage-soft: rgba(106, 136, 117, 0.15);
+  --good: #4B8B63;
+  --warn: #C98A1B;
+  --critical: #C1584A;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+  padding: 4rem 1.5rem 5rem;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background-color: var(--paper);
+}
+
+/* ---- atmospheric blobs: fixed to viewport, never stretch/cut with page length ---- */
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.5; }
+.blob-clay { width: 46vw; height: 46vw; top: -14vw; left: -12vw; background: var(--clay); opacity: 0.22; }
+.blob-sage { width: 38vw; height: 38vw; top: -8vw; right: -10vw; background: var(--sage); opacity: 0.18; }
+.blob-clay-deep { width: 42vw; height: 42vw; bottom: -20vw; left: 20vw; background: var(--clay-deep); opacity: 0.14; }
+
+.wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.75rem; }
+
+/* ---- tooltips: CSS-only, no JS ---- */
+.tip {
+  border-bottom: 1px dotted var(--dim);
+  cursor: help;
+  position: relative;
+}
+.tip:hover::after, .tip:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 135%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Public Sans", -apple-system, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  text-align: center;
+  line-height: 1.35;
+  padding: 0.55rem 0.75rem;
+  border-radius: 9px;
+  box-shadow: 0 10px 28px -8px rgba(36, 28, 51, 0.4);
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* ---- entrance choreography ---- */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+header, .hero-row-wrap, .timestamp-row, .grid > * {
+  opacity: 0;
+  animation: riseIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+header { animation-delay: 0.05s; }
+.hero-row-wrap { animation-delay: 0.18s; }
+.timestamp-row { animation-delay: 0.32s; }
+.grid > *:nth-child(1) { animation-delay: 0.42s; }
+.grid > *:nth-child(2) { animation-delay: 0.5s; }
+.grid > *:nth-child(3) { animation-delay: 0.58s; }
+.grid > *:nth-child(4) { animation-delay: 0.66s; }
+
+/* ---- header / hero ---- */
+header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.eyebrow .dot { color: var(--clay); }
+.timestamp {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--dim);
+}
+.timestamp-row { text-align: center; }
+
+.hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  padding: 1rem 0 0.5rem;
+}
+.hero-main { text-align: center; }
+.hero-number {
+  font-family: "Fraunces", Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 380;
+  font-size: clamp(5rem, 16vw, 8rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--clay) 0%, #D99163 60%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-variant-numeric: tabular-nums;
+  animation: breathe 5s ease-in-out infinite 1s;
+}
+@keyframes breathe {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.08) saturate(1.15); }
+}
+.hero-label {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-top: 0.4rem;
+}
+.satellites { display: flex; gap: 2rem; align-self: center; padding-bottom: 0.4rem; }
+.satellite { text-align: center; }
+.satellite-number {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 500;
+  font-size: 2.1rem;
+  color: var(--clay-deep);
+  font-variant-numeric: tabular-nums;
+}
+.satellite-label {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.63rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-top: 0.2rem;
+}
+.hero-row-wrap { position: relative; }
+
+/* ---- panels ---- */
+.panel {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem 1.6rem;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(106, 136, 117, 0.14), 0 2px 8px -2px rgba(38, 37, 33, 0.05);
+  transition: box-shadow 0.35s ease, transform 0.35s ease, border-color 0.35s ease;
+}
+.panel:hover {
+  border-color: var(--clay-soft);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px -14px rgba(204, 120, 92, 0.22), 0 4px 12px -2px rgba(38, 37, 33, 0.08);
+}
+.panel h2 {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 0 0 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.count-badge {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  background: var(--warn);
+  color: #FFFFFF;
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+@media (max-width: 620px) {
+  .grid { grid-template-columns: 1fr; }
+  .satellites { gap: 1.4rem; }
+  .hero { gap: 1.5rem; }
+}
+
+/* ---- hook health ---- */
+.hook-row { display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+.hook-row:last-child { border-bottom: none; }
+.hook-name { flex: 1; }
+.hook-time { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 0.74rem; color: var(--dim); }
+.hook-note { font-size: 0.7rem; }
+.pill {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+  animation: pulseGlow 2.4s ease-in-out infinite;
+}
+@keyframes pulseGlow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+.pill-good { background: var(--good); box-shadow: 0 0 8px rgba(31, 157, 102, 0.5); }
+.pill-warn { background: var(--warn); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+.pill-critical { background: var(--critical); box-shadow: 0 0 8px rgba(229, 72, 77, 0.5); }
+.text-critical { color: var(--critical); }
+
+/* ---- recent sessions timeline ---- */
+.timeline { list-style: none; margin: 0; padding: 0; position: relative; display: flex; flex-direction: column; gap: 1rem; }
+.timeline::before {
+  content: ""; position: absolute; left: 3px; top: 6px; bottom: 6px; width: 2px;
+  background: linear-gradient(to bottom, var(--clay), var(--clay-deep) 60%, transparent 95%);
+  border-radius: 2px;
+}
+.timeline li { position: relative; padding-left: 1.3rem; }
+.timeline li::before {
+  content: ""; position: absolute; left: -1px; top: 0.3em; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--clay); box-shadow: 0 0 0 3px var(--clay-soft);
+}
+.session-date { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 0.7rem; color: var(--dim); display: block; margin-bottom: 0.1rem; }
+.session-link { color: var(--ink); text-decoration: none; font-size: 0.92rem; font-weight: 500; border-bottom: 1px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
+.session-link:hover, .session-link:focus-visible { color: var(--clay); border-bottom-color: var(--clay-soft); }
+.empty { color: var(--dim); font-size: 0.86rem; font-style: italic; margin: 0; }
+
+/* ---- taxonomy chips ---- */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.74rem;
+  font-weight: 500;
+  background: var(--clay-soft);
+  color: #99553B;
+  border: 1px solid rgba(204, 120, 92, 0.32);
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.chip:hover { transform: translateY(-2px); background: rgba(204, 120, 92, 0.26); }
+.chip-topic { background: var(--sage-soft); color: #3F5A48; border-color: rgba(106, 136, 117, 0.35); }
+.chip-topic:hover { background: rgba(106, 136, 117, 0.24); }
+
+/* ---- inbox panel ---- */
+.panel-inbox { grid-column: 1 / -1; border-color: rgba(245, 158, 11, 0.4); }
+
+/* ---- session drafts panel ---- */
+.panel-drafts { grid-column: 1 / -1; border-color: rgba(229, 72, 77, 0.35); }
+.panel-drafts-ok { border-color: var(--border); }
+.draft-list:empty { display: none; }
+.draft-empty { display: none; }
+.draft-list:empty + .draft-empty { display: block; }
+.badge-ok { background: var(--sage-soft); color: #3F5A48; }
+.draft-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.draft-list li { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; font-size: 0.86rem; }
+.draft-state {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
+  padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--clay-soft); color: var(--ink);
+}
+.draft-active, .draft-finalizing { background: var(--sage-soft); color: #3F5A48; }
+.draft-stale { background: rgba(245, 158, 11, 0.18); color: #8A5A00; }
+.draft-crashed, .draft-orphaned { background: rgba(229, 72, 77, 0.16); color: #A3272B; }
+.draft-sid { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--dim); }
+.draft-note { color: var(--ink); flex: 1 1 auto; min-width: 12ch; }
+.draft-link { font-size: 0.76rem; color: var(--clay); text-decoration: none; border-bottom: 1px solid transparent; }
+.draft-link:hover, .draft-link:focus-visible { border-bottom-color: var(--clay-soft); }
+
+footer { position: relative; z-index: 1; text-align: center; font-size: 0.74rem; font-weight: 400; color: var(--dim); font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+
+a:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  header, .hero-row-wrap, .timestamp-row, .grid > * { opacity: 1 !important; transform: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="atmosphere">
+  <div class="blob blob-clay"></div>
+  <div class="blob blob-sage"></div>
+  <div class="blob blob-clay-deep"></div>
+</div>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Second Brain <span class="dot">·</span> Vault Observatory</span>
+  </header>
+
+  <div class="hero-row-wrap">
+    <div class="hero">
+      <div class="satellites">
+        <div class="satellite">
+          <div class="satellite-number">{{PROJECTS_COUNT}}</div>
+          <div class="satellite-label">Projects</div>
+        </div>
+        <div class="satellite">
+          <div class="satellite-number">{{TOPICS_COUNT}}</div>
+          <div class="satellite-label">Topics</div>
+        </div>
+      </div>
+      <div class="hero-main">
+        <div class="hero-number">{{SESSIONS_COUNT}}</div>
+        <div class="hero-label"><span class="tip" tabindex="0" data-tip="Curated summaries saved from past Claude Code sessions -- not every chat, only the ones worth remembering.">Sessions archived</span></div>
+      </div>
+      <div class="satellites">
+        <div class="satellite">
+          <div class="satellite-number">{{INBOX_COUNT}}</div>
+          <div class="satellite-label"><span class="tip" tabindex="0" data-tip="Quick captures from Desktop/iOS, waiting to be reviewed and filed properly.">Inbox</span></div>
+        </div>
+        <div class="satellite">
+          <div class="satellite-number">{{NOTES_COUNT}}</div>
+          <div class="satellite-label"><span class="tip" tabindex="0" data-tip="Notes that started in Inbox and have since been triaged: tagged, linked to a hub, and moved into Notes/.">Filed</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="timestamp-row"><span class="timestamp">As of {{GENERATED_AT}} — a snapshot, not live; regenerate for a fresh one</span></div>
+
+  <div class="grid">
+    <section class="panel">
+      <h2><span class="tip" tabindex="0" data-tip="The automated background scripts that save session summaries, keep a running draft, and check for pending Inbox items.">Hook health</span></h2>
+      {{HOOK_ROWS}}
+    </section>
+
+    <section class="panel">
+      <h2>Recent activity</h2>
+      {{RECENT_SESSIONS}}
+    </section>
+
+    {{INBOX_SECTION}}
+
+    <section class="panel panel-drafts panel-drafts-{{DRAFTS_STATE}}">
+      <h2><span class="tip" tabindex="0" data-tip="The Stop hook rewrites a draft every turn while a session runs; SessionEnd promotes it into a real summary and then deletes it. active = a session in flight right now. stale / crashed / orphaned = that finalize never finished, and nothing else ever sweeps this directory.">Session drafts</span> <span class="count-badge">{{DRAFTS_BADGE}}</span></h2>
+      <ul class="draft-list">{{DRAFT_ROWS}}</ul>
+      <p class="draft-empty empty">No drafts pending &mdash; every session finalized cleanly.</p>
+    </section>
+
+    <section class="panel" style="grid-column: 1 / -1;">
+      <h2><span class="tip" tabindex="0" data-tip="The projects and topics used to categorize everything in the vault -- every note is tagged to exactly one of these.">Taxonomy</span></h2>
+      <div class="chips">
+        {{PROJECT_CHIPS}}
+        {{TOPIC_CHIPS}}
+      </div>
+    </section>
+  </div>
+
+  <footer>{{BULK_EXPORT_COUNT}} archived conversations in the historical export · generated by brain_status.py</footer>
+</div>
+</body>
+</html>
