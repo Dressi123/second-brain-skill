@@ -180,7 +180,7 @@ it. The git directory deliberately lives *outside* the vault, at
 
 ```bash
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"  # yours
-git init --bare ~/.second-brain-git
+git init --bare -b main ~/.second-brain-git   # -b main, or the first push fails
 git --git-dir=$HOME/.second-brain-git --work-tree="$VAULT" remote add origin \
   https://github.com/<you>/second-brain-vault.git
 git --git-dir=$HOME/.second-brain-git --work-tree="$VAULT" add -A
