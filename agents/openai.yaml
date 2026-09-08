@@ -1,0 +1,7 @@
+interface:
+  display_name: "Second Brain"
+  short_description: "Search and maintain the user's Obsidian vault"
+  default_prompt: "Use $second-brain to find relevant context in my Obsidian vault."
+
+policy:
+  allow_implicit_invocation: true
