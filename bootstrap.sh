@@ -10,9 +10,13 @@
 #   ./bootstrap.sh --vault ~/Documents/MyVault       # vault somewhere else
 #   ./bootstrap.sh --name "Sam" --yes                # no prompt
 #   ./bootstrap.sh --dry-run                         # show, change nothing
+#   ./bootstrap.sh --update                          # take upstream, re-apply
 #
 # Safe to run twice: every rewrite is a substitution of the original author's
 # values, so a second run finds nothing left to change.
+#
+# Your answers are remembered in .bootstrap.conf (gitignored), so --update and
+# any later re-run need no flags.
 set -euo pipefail
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,10 +29,30 @@ OLD_VAULT_TAIL="Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
 OLD_MARK="iCloud~md~obsidian/Documents/MyVault"
 OLD_NAME="the user"
 
-VAULT="$HOME/$OLD_VAULT_TAIL"
+# Every tracked file this script edits in place. Named once, because --update
+# has to put exactly these back before it can pull.
+REWRITTEN=(
+  SKILL.md
+  agents/openai.yaml
+  helpers/new_hub.py
+  helpers/vault_paths.py
+  helpers/session_end_finalize_hook.sh
+  helpers/session_start_inbox_check.sh
+  helpers/session_stop_draft_hook.sh
+  helpers/vault_git_sync.sh
+  helpers/vault_pretool_pull_hook.sh
+  mcp-server/server.py
+  vercel/app.py
+  vercel/oauth_stateless.py
+)
+
+CONF="$SKILL_DIR/.bootstrap.conf"
+
+VAULT=""
 NAME=""
 ASSUME_YES=0
 DRY_RUN=0
+UPDATE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -36,10 +60,42 @@ while [ $# -gt 0 ]; do
     --name)    NAME="${2:?--name needs a name}";   shift 2 ;;
     --yes|-y)  ASSUME_YES=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --update)  UPDATE=1; shift ;;
+    -h|--help) sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
+
+# Answers from last time, so a re-run after an update needs no flags.
+if [ -f "$CONF" ]; then
+  # shellcheck disable=SC1090
+  . "$CONF"
+  [ -n "$VAULT" ] || VAULT="${CONF_VAULT:-}"
+  [ -n "$NAME" ]  || NAME="${CONF_NAME:-}"
+fi
+[ -n "$VAULT" ] || VAULT="$HOME/$OLD_VAULT_TAIL"
+
+# --update: this script rewrites tracked files in place, so a bootstrapped
+# clone is permanently dirty and `git pull` refuses to run. Put those files
+# back, take upstream, then re-apply -- which is safe precisely because every
+# rewrite here is mechanical and idempotent.
+if [ "$UPDATE" = 1 ]; then
+  command -v git >/dev/null || { echo "--update needs git" >&2; exit 1; }
+  cd "$SKILL_DIR" || exit 1
+  echo "Discarding this script's rewrites so the pull can apply:"
+  for f in "${REWRITTEN[@]}"; do [ -f "$f" ] && printf '  %s\n' "$f"; done
+  echo
+  echo "Edits of your own to those files go too. Anything else is untouched."
+  if [ "$ASSUME_YES" = 0 ]; then
+    read -r -p "Continue? [y/N] " reply
+    case "$reply" in y|Y|yes|Yes) ;; *) echo "nothing changed."; exit 0 ;; esac
+  fi
+  git checkout -- "${REWRITTEN[@]}" 2>/dev/null
+  git pull --ff-only || { echo "pull failed -- resolve by hand, then re-run ./bootstrap.sh --yes" >&2; exit 1; }
+  echo
+  echo "Pulled. Re-applying your settings..."
+  ASSUME_YES=1
+fi
 
 VAULT="${VAULT/#\~/$HOME}"
 VAULT="${VAULT%/}"
@@ -113,6 +169,10 @@ open(path, "w").write(src)
 PY
   echo "  rewrote: helpers/vault_paths.py (DEFAULT_VAULT)"
 }
+
+if [ "$DRY_RUN" = 0 ]; then
+  printf 'CONF_VAULT=%q\nCONF_NAME=%q\n' "$VAULT" "$NAME" > "$CONF"
+fi
 
 echo "Rewriting paths and name:"
 set_default_vault

@@ -24,3 +24,6 @@ wheels/
 oauth_state.json
 
 .DS_Store
+
+# bootstrap.sh remembers your vault path and name here
+.bootstrap.conf

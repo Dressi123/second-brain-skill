@@ -141,6 +141,21 @@ vault, and at the end of a session where real work happened.
 
 </details>
 
+### Keeping it up to date
+
+`bootstrap.sh` edits tracked files in place, so a set-up clone is permanently
+dirty and a plain `git pull` refuses to run. Take updates with:
+
+```bash
+cd ~/.claude/skills/second-brain
+./bootstrap.sh --update
+```
+
+It puts the rewritten files back, fast-forwards, then re-applies your vault path
+and name from `.bootstrap.conf` — no flags to remember. It tells you which files
+it resets first; edits of your own to those go with them, and anything else in
+the clone is untouched.
+
 ### How the vault is organised
 
 ```
