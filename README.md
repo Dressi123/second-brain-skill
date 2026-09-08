@@ -121,12 +121,13 @@ python3 ~/.claude/skills/second-brain/helpers/new_hub.py \
 Open Claude Code anywhere and ask **"what's in my second brain?"**. It should read
 `SKILL.md`, run the index, and tell you about `my-app`.
 
-<details>
-<summary><b>Make Claude reach for it on its own</b> — a snippet for <code>~/.claude/CLAUDE.md</code></summary>
+### Tell your agent the vault exists
 
-<br>
+**Do this — it is not optional polish.** Without it the skill only fires when you
+name it. With it, Claude opens a repo and loads that project's history on its
+own, and offers to write the summary at the end.
 
-Add this so every session knows the vault exists (create the file if it doesn't):
+Add to `~/.claude/CLAUDE.md` (create the file if it isn't there):
 
 ```markdown
 ## The second brain
@@ -138,6 +139,35 @@ start, creating hubs, and answering "what did we figure out about X?".
 Invoke it at session start in a real project directory, when I mention the
 vault, and at the end of a session where real work happened.
 ```
+
+<details>
+<summary><b>Using Codex too?</b> — the same pointer for <code>~/.codex/AGENTS.md</code></summary>
+
+<br>
+
+Symlink the skill so there is still only one copy, then give Codex its own
+pointer:
+
+```bash
+mkdir -p ~/.codex/skills
+ln -s ~/.claude/skills/second-brain ~/.codex/skills/second-brain
+```
+
+```markdown
+## The second brain
+
+I keep a personal knowledge base at `<your vault path>` — plain markdown.
+Use the **`second-brain` skill** at `~/.codex/skills/second-brain/`: start with
+`helpers/vault_index.py` and pick notes by meaning, never trust a hardcoded hub
+list, and read `SKILL.md` there for the full conventions.
+
+Codex has no session hooks, so when a session produced real work, **offer** to
+save a summary and follow the "save session summary" operation in `SKILL.md`.
+Do not attach the `*_hook.sh` scripts to Codex — they invoke the Claude CLI.
+```
+
+Reads are safe to do directly; ask before a vault write if the sandbox does not
+already allow it.
 
 </details>
 
