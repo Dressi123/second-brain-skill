@@ -99,8 +99,13 @@ do_push() {
     git add -A 2>>"$LOG"
     local count; count=$(git diff --cached --name-only | wc -l | tr -d ' ')
     if [ "$count" -gt 0 ]; then
-      git -c user.name="the user" \
-          -c user.email="second-brain@localhost" \
+      # Identity from this machine's git config, not baked in here: a
+      # hardcoded author leaks an email in a shared clone and signs someone
+      # else's vault commits with it.
+      local gname gemail
+      gname=$(git config --global user.name 2>/dev/null); [ -n "$gname" ] || gname="second-brain"
+      gemail=$(git config --global user.email 2>/dev/null); [ -n "$gemail" ] || gemail="second-brain@localhost"
+      git -c user.name="$gname" -c user.email="$gemail" \
           commit -q -m "vault: $count file(s) changed on Mac ($(date '+%Y-%m-%d %H:%M'))" 2>>"$LOG" \
         && log "committed $count local change(s)"
     fi
