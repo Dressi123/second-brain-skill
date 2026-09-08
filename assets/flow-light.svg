@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 404" width="1180" height="404" role="img" aria-label="How the second brain answers a question and saves a session">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#0D9488"/>
+    </marker>
+  </defs>
+  <text x="78" y="80" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5" letter-spacing="1.8" fill="#94A3B8">RECALL</text>
+  <rect x="78" y="96" width="292" height="92" rx="14" fill="#FFFFFF" stroke="#DDE3EC" stroke-width="1.5"/>
+  <rect x="78" y="118" width="3.5" height="48" rx="1.75" fill="#0D9488"/>
+  <text x="102" y="136" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="650" fill="#0F172A">You, in any repo</text>
+  <text x="102" y="162" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-style="italic" fill="#4338CA">“what did we decide about X?”</text>
+  <path d="M384 142.0 L418 142.0" stroke="#0D9488" stroke-width="1.8" fill="none" marker-end="url(#arrow)" opacity="0.85"/>
+  <rect x="432" y="96" width="292" height="92" rx="14" fill="#FFFFFF" stroke="#DDE3EC" stroke-width="1.5"/>
+  <text x="456" y="136" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="650" fill="#0F172A">vault_index.py</text>
+  <text x="456" y="162" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" fill="#5A6B80">the whole vault as one 3k-token map</text>
+  <path d="M738 142.0 L772 142.0" stroke="#0D9488" stroke-width="1.8" fill="none" marker-end="url(#arrow)" opacity="0.85"/>
+  <rect x="786" y="96" width="292" height="92" rx="14" fill="#FFFFFF" stroke="#DDE3EC" stroke-width="1.5"/>
+  <text x="810" y="136" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="650" fill="#0F172A">The right note</text>
+  <text x="810" y="162" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" fill="#5A6B80">picked by meaning, not by keyword</text>
+  <text x="78" y="252" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5" letter-spacing="1.8" fill="#94A3B8">CAPTURE</text>
+  <rect x="78" y="268" width="292" height="92" rx="14" fill="#FFFFFF" stroke="#DDE3EC" stroke-width="1.5"/>
+  <rect x="78" y="290" width="3.5" height="48" rx="1.75" fill="#0D9488"/>
+  <text x="102" y="308" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="650" fill="#0F172A">A session ends</text>
+  <text x="102" y="334" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-style="italic" fill="#4338CA">real work happened</text>
+  <path d="M384 314.0 L418 314.0" stroke="#0D9488" stroke-width="1.8" fill="none" marker-end="url(#arrow)" opacity="0.85"/>
+  <rect x="432" y="268" width="292" height="92" rx="14" fill="#FFFFFF" stroke="#DDE3EC" stroke-width="1.5"/>
+  <text x="456" y="308" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="650" fill="#0F172A">Stop + SessionEnd hooks</text>
+  <text x="456" y="334" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" fill="#5A6B80">draft, then a written summary</text>
+  <path d="M738 314.0 L772 314.0" stroke="#0D9488" stroke-width="1.8" fill="none" marker-end="url(#arrow)" opacity="0.85"/>
+  <rect x="786" y="268" width="292" height="92" rx="14" fill="#FFFFFF" stroke="#DDE3EC" stroke-width="1.5"/>
+  <text x="810" y="308" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="650" fill="#0F172A">Filed and linked</text>
+  <text x="810" y="334" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" fill="#5A6B80">under its project hub, validated</text>
+  <path d="M78 372 L1102 372" stroke="#DDE3EC" stroke-width="1.5" stroke-dasharray="3 5" fill="none"/>
+  <rect x="78" y="358" width="336" height="28" rx="14" fill="#F1F5F9"/>
+  <text x="96" y="377" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="12.5" letter-spacing="0.3" fill="#0D9488">one vault · plain markdown · no database</text>
+</svg>

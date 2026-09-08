@@ -1,10 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg">
-  <img alt="second brain — a memory Claude Code actually uses" src="assets/banner-light.svg" width="100%">
-</picture>
+<img alt="second brain — a memory Claude Code actually uses" src="assets/hero.svg" width="100%">
 
 <br>
 
@@ -26,20 +22,11 @@ and links it back.
 
 ## The shape of it
 
-```
-you                      ~/.claude/skills/second-brain          your vault
-───                      ─────────────────────────────          ──────────
-
-  "what did we decide     SKILL.md ──── the rules            Projects/
-   about the map panel?"     │                               Notes/Topics/
-        │                    ├── vault_index.py    ───────►  Claude Archive/
-        └──── Claude ────────┤       the whole vault as        Sessions/
-                             │       one 3k-token map        Inbox/
-   ...session ends           ├── search_notes.py             Templates/
-        │                    │       literal drill-down
-        └──── hooks ─────────┴── new_hub · validate ──────►  a new summary,
-                                     add_session_to_hub       filed and linked
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/flow-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/flow-light.svg">
+  <img alt="Recall: you ask in any repo, vault_index.py maps the vault, the right note comes back. Capture: a session ends, the hooks draft and write a summary, it is filed and linked under its project hub." src="assets/flow-light.svg" width="100%">
+</picture>
 
 It is plain markdown all the way down — Obsidian on top is optional (nice for the
 graph view and mobile editing, but nothing here depends on it).
@@ -85,33 +72,6 @@ Claude on iOS and claude.ai.
 </td>
 </tr>
 </table>
-
-```mermaid
-flowchart LR
-    subgraph mac["Your Mac"]
-        direction TB
-        CC["Claude Code<br/>any repo"]
-        SK["second-brain skill"]
-        CD["Claude Desktop"]
-        MS["mcp-server/"]
-        V[("Vault<br/>plain markdown")]
-        CC <--> SK
-        SK <--> V
-        CD <--> MS
-        MS <--> V
-    end
-    subgraph cloud["Anywhere else"]
-        direction TB
-        GH[("GitHub mirror<br/>private repo")]
-        VC["vercel/"]
-        IOS["Claude on iOS<br/>and claude.ai"]
-        GH <--> VC
-        VC <--> IOS
-    end
-    V <-.->|vault_git_sync.sh| GH
-```
-
-<br>
 
 ## Requirements
 
@@ -347,6 +307,31 @@ independent. Set up either, both, or neither.
 | **Needs** | `uv` | GitHub repo + Vercel account |
 | **Setup** | below, ~2 minutes | Tier 3 above |
 
+```mermaid
+flowchart LR
+    subgraph mac["Your Mac"]
+        direction TB
+        CC["Claude Code<br/>any repo"]
+        SK["second-brain skill"]
+        CD["Claude Desktop"]
+        MS["mcp-server/"]
+        V[("Vault<br/>plain markdown")]
+        CC <--> SK
+        SK <--> V
+        CD <--> MS
+        MS <--> V
+    end
+    subgraph cloud["Anywhere else"]
+        direction TB
+        GH[("GitHub mirror<br/>private repo")]
+        VC["vercel/"]
+        IOS["Claude on iOS<br/>and claude.ai"]
+        GH <--> VC
+        VC <--> IOS
+    end
+    V <-.->|vault_git_sync.sh| GH
+```
+
 > [!NOTE]
 > **Claude Code needs neither.** The skill reads the vault off disk itself, which
 > is always faster and never a sync behind — `SKILL.md` tells Claude to ignore the
@@ -452,7 +437,7 @@ helpers/            vault_index · search_notes · list_taxonomy · validate
 mcp-server/         stdio MCP server for Claude Desktop (local disk)
 vercel/             hosted MCP server for iOS and web (reads the GitHub mirror)
 agents/             Codex agent card
-assets/             the banner above
+assets/             hero, flow diagram, social card
 ```
 
 `SKILL.md` is worth reading start to finish even if you never touch the code. It
