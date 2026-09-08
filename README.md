@@ -214,13 +214,61 @@ repo — not `gh auth token`, which carries far broader scopes. Then add
 Once it's up, `capture_note` from your phone drops a note into `Inbox/`, and the
 next Claude Code session on your Mac offers to file it.
 
-### Claude Desktop, locally
+---
 
-Separate and much simpler — `mcp-server/` is a stdio MCP server exposing the same
-six tools off the local disk. Point Claude Desktop's config at
-`mcp-server/server.py` if you want the vault there too. Claude Code doesn't need
-it: the skill reads the files directly, which is always faster and never a sync
-behind.
+## The two MCP servers
+
+Both ship in this repo, they expose the same six tools (`vault_index`,
+`search_notes`, `list_taxonomy`, `read_note`, `capture_note`, `write_note`), and
+they are independent of each other — set up either, both, or neither.
+
+| | `mcp-server/` | `vercel/` |
+|---|---|---|
+| For | Claude Desktop on the Mac | Claude on iOS and claude.ai |
+| Transport | stdio, local only | HTTPS + OAuth |
+| Reads the vault from | disk, directly | the GitHub mirror |
+| Needs | `uv` | GitHub repo + Vercel account |
+| Setup | below, ~2 minutes | Tier 3 above |
+
+**Claude Code needs neither.** The skill reads the vault off disk itself, which is
+always faster and never a sync behind — `SKILL.md` says so explicitly, and tells
+Claude to ignore the remote tools when running locally.
+
+### Claude Desktop (local, stdio)
+
+Install [`uv`](https://docs.astral.sh/uv/) if you don't have it
+(`brew install uv`), then add this to
+`~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "second-brain": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": ["run", "--directory",
+               "/Users/<you>/.claude/skills/second-brain/mcp-server", "server.py"]
+    }
+  }
+}
+```
+
+Absolute paths in both fields — Claude Desktop doesn't launch with your shell's
+`PATH`, so a bare `uv` is the usual reason a server shows up red. `command -v uv`
+gives you the right one. `uv` reads `pyproject.toml` and `uv.lock` in that
+directory and builds the environment on first launch; there is nothing to install
+by hand.
+
+Verify it without opening the app:
+
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}\n' \
+  | uv run --directory ~/.claude/skills/second-brain/mcp-server server.py
+```
+
+A JSON result naming your vault means it works. Then restart Claude Desktop.
+
+This one is **read/write** — `capture_note` and `write_note` are exposed, which is
+fine for a server only something already on your Mac can launch.
 
 ---
 

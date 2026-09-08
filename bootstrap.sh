@@ -119,7 +119,21 @@ set_default_vault
 rewrite "$SKILL_DIR/SKILL.md"
 rewrite "$SKILL_DIR/agents/openai.yaml"
 for f in "$SKILL_DIR"/helpers/*.sh "$SKILL_DIR"/helpers/new_hub.py; do rewrite "$f"; done
-run chmod +x "$SKILL_DIR"/helpers/*.sh
+# Both MCP servers put the owner's name in the `instructions` string every
+# client displays, so this is not cosmetic -- Claude Desktop and Claude on iOS
+# read it on connect.
+rewrite "$SKILL_DIR/mcp-server/server.py"
+rewrite "$SKILL_DIR/vercel/app.py"
+rewrite "$SKILL_DIR/vercel/oauth_stateless.py"
+run chmod +x "$SKILL_DIR"/helpers/*.sh "$SKILL_DIR"/vercel/sync_helpers.sh
+
+# mcp-server/vault_tools.py finds the helpers at ~/.claude/skills/second-brain
+# unless told otherwise, so a clone anywhere else needs one env var.
+if [ "$SKILL_DIR" != "$HOME/.claude/skills/second-brain" ]; then
+  echo
+  echo "  NOTE: this clone is not at ~/.claude/skills/second-brain."
+  echo "  For the MCP servers, export SECOND_BRAIN_HELPERS=$SKILL_DIR/helpers"
+fi
 
 # --------------------------------------------------------------- 2. scaffold
 
