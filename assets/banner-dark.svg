@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="second brain — a memory Claude actually uses">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A0E17"/>
+      <stop offset="0.55" stop-color="#0E1420"/>
+      <stop offset="1" stop-color="#141B2C"/>
+    </linearGradient>
+    <radialGradient id="glowTeal" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4ECDC4" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#4ECDC4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowIndigo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6366F1" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E7F6F4"/>
+      <stop offset="0.5" stop-color="#7FE3DA"/>
+      <stop offset="1" stop-color="#A5B4FC"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4ECDC4" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="320" rx="14" fill="url(#bg)"/>
+  <ellipse cx="960" cy="150" rx="330" ry="240" fill="url(#glowTeal)"/>
+  <ellipse cx="1150" cy="290" rx="280" ry="200" fill="url(#glowIndigo)"/>
+  <ellipse cx="60" cy="30" rx="240" ry="170" fill="url(#glowIndigo)"/>
+
+  <!-- knowledge graph: hubs, notes, and the links between them -->
+  <g stroke="url(#edge)" stroke-width="1.3" fill="none" stroke-linecap="round">
+    <path d="M900 162 L862 92"/>
+    <path d="M862 92 L960 62"/>
+    <path d="M960 62 L1058 112"/>
+    <path d="M1058 112 L900 162"/>
+    <path d="M900 162 L802 172"/>
+    <path d="M900 162 L1008 202"/>
+    <path d="M900 162 L852 254"/>
+    <path d="M852 254 L802 172"/>
+    <path d="M852 254 L958 268"/>
+    <path d="M958 268 L1008 202"/>
+    <path d="M1008 202 L1080 254"/>
+    <path d="M1008 202 L1118 168"/>
+    <path d="M1118 168 L1058 112"/>
+    <path d="M1058 112 L1142 88"/>
+    <path d="M1080 254 L958 268"/>
+  </g>
+
+  <g fill="#0E1420" stroke="#475569" stroke-width="1.4">
+    <circle cx="862" cy="92" r="5.5"/>
+    <circle cx="960" cy="62" r="4.5"/>
+    <circle cx="802" cy="172" r="4.5"/>
+    <circle cx="1118" cy="168" r="4.5"/>
+    <circle cx="958" cy="268" r="4.5"/>
+    <circle cx="1142" cy="88" r="3.5"/>
+    <circle cx="1080" cy="254" r="5"/>
+  </g>
+  <g fill="#4ECDC4">
+    <circle cx="1058" cy="112" r="6"/>
+    <circle cx="852" cy="254" r="5"/>
+  </g>
+  <circle cx="1008" cy="202" r="5.5" fill="#F59E0B"/>
+  <circle cx="900" cy="162" r="11" fill="#4ECDC4" opacity="0.16"/>
+  <circle cx="900" cy="162" r="7" fill="#4ECDC4"/>
+
+  <g font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+    <text x="72" y="148" font-size="66" font-weight="700" letter-spacing="-2" fill="url(#title)">second brain</text>
+    <text x="74" y="192" font-size="21" font-weight="500" fill="#94A3B8">A memory Claude Code actually uses.</text>
+    <text x="74" y="222" font-size="21" font-weight="500" fill="#64748B">Plain markdown in. Context out.</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="12.5" letter-spacing="0.6">
+    <rect x="72" y="248" width="128" height="27" rx="13.5" fill="#4ECDC4" opacity="0.10"/>
+    <text x="90" y="266" fill="#4ECDC4">claude code</text>
+    <rect x="210" y="248" width="112" height="27" rx="13.5" fill="#6366F1" opacity="0.13"/>
+    <text x="228" y="266" fill="#A5B4FC">obsidian</text>
+    <rect x="332" y="248" width="76" height="27" rx="13.5" fill="#F59E0B" opacity="0.12"/>
+    <text x="350" y="266" fill="#F59E0B">codex</text>
+  </g>
+</svg>

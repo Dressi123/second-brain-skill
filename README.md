@@ -1,37 +1,130 @@
-# Second brain
+<div align="center">
 
-A Claude Code skill that turns a folder of markdown into a memory Claude actually
-uses. Ask *"what did we decide about X?"* in any repo and it finds the note; end a
-real work session and it writes the summary itself and files it under the right
-project.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg">
+  <img alt="second brain — a memory Claude Code actually uses" src="assets/banner-light.svg" width="100%">
+</picture>
+
+<br>
+
+![macOS](https://img.shields.io/badge/macOS-0F172A?style=flat-square&logo=apple&logoColor=white)
+![Python 3.12+](https://img.shields.io/badge/Python-3.12+-4ECDC4?style=flat-square&logo=python&logoColor=white)
+![Claude Code](https://img.shields.io/badge/Claude_Code-skill-6366F1?style=flat-square)
+![Codex](https://img.shields.io/badge/Codex-compatible-F59E0B?style=flat-square)
+![Obsidian](https://img.shields.io/badge/Obsidian-optional-8B5CF6?style=flat-square&logo=obsidian&logoColor=white)
+
+**A Claude Code skill that turns a folder of markdown into a memory Claude actually uses.**
+
+Ask *"what did we decide about X?"* in any repo and it finds the note. End a real
+work session and it writes the summary itself, files it under the right project,
+and links it back.
+
+</div>
+
+---
+
+## The shape of it
+
+```
+you                      ~/.claude/skills/second-brain          your vault
+───                      ─────────────────────────────          ──────────
+
+  "what did we decide     SKILL.md ──── the rules            Projects/
+   about the map panel?"     │                               Notes/Topics/
+        │                    ├── vault_index.py    ───────►  Claude Archive/
+        └──── Claude ────────┤       the whole vault as        Sessions/
+                             │       one 3k-token map        Inbox/
+   ...session ends           ├── search_notes.py             Templates/
+        │                    │       literal drill-down
+        └──── hooks ─────────┴── new_hub · validate ──────►  a new summary,
+                                     add_session_to_hub       filed and linked
+```
 
 It is plain markdown all the way down — Obsidian on top is optional (nice for the
 graph view and mobile editing, but nothing here depends on it).
 
+<br>
+
 ## What you get
 
-**Tier 1 — the vault and the skill.** Claude can search your notes by meaning
-rather than keyword, load a project's history when you open its repo, and file
-new notes correctly. Ten minutes to set up, and this is most of the value.
+<table>
+<tr>
+<td width="33%" valign="top">
 
-**Tier 2 — hooks.** Sessions save themselves. A background draft updates every
-turn, and when the session ends Claude promotes it into a real summary, links it
-to its project hub, and validates the frontmatter. You do nothing.
+### 🧠 &nbsp;Tier 1
+**The vault and the skill**
 
-**Tier 3 — phone and web.** The vault mirrors to a private GitHub repo and a small
-Vercel app serves it to Claude on iOS and claude.ai, so you can capture a note
-from your phone and it is on your Mac by the next session. Optional, and the
-fiddliest part.
+Claude searches your notes by *meaning* rather than keyword, loads a project's
+history when you open its repo, and files new notes correctly.
+
+`~10 min` · most of the value
+
+</td>
+<td width="33%" valign="top">
+
+### ⚙️ &nbsp;Tier 2
+**Hooks**
+
+Sessions save themselves. A draft updates every turn; at session end Claude
+promotes it to a real summary, links it to its hub, validates the frontmatter.
+
+`~5 min` · you do nothing
+
+</td>
+<td width="33%" valign="top">
+
+### 📱 &nbsp;Tier 3
+**Phone and web**
+
+The vault mirrors to a private GitHub repo and a small Vercel app serves it to
+Claude on iOS and claude.ai.
+
+`~30 min` · optional, fiddliest
+
+</td>
+</tr>
+</table>
+
+```mermaid
+flowchart LR
+    subgraph mac["Your Mac"]
+        direction TB
+        CC["Claude Code<br/>any repo"]
+        SK["second-brain skill"]
+        CD["Claude Desktop"]
+        MS["mcp-server/"]
+        V[("Vault<br/>plain markdown")]
+        CC <--> SK
+        SK <--> V
+        CD <--> MS
+        MS <--> V
+    end
+    subgraph cloud["Anywhere else"]
+        direction TB
+        GH[("GitHub mirror<br/>private repo")]
+        VC["vercel/"]
+        IOS["Claude on iOS<br/>and claude.ai"]
+        GH <--> VC
+        VC <--> IOS
+    end
+    V <-.->|vault_git_sync.sh| GH
+```
+
+<br>
 
 ## Requirements
 
-macOS, Python 3.12+, git, [Claude Code](https://claude.com/claude-code), and `jq`
-(`brew install jq`) if you want Tier 2. Tier 3 additionally wants a GitHub
-account and a free Vercel account.
+| | |
+|---|---|
+| **Always** | macOS · Python 3.12+ · git · [Claude Code](https://claude.com/claude-code) |
+| **Tier 2** | `jq` — `brew install jq` |
+| **Tier 3** | a GitHub account · a free Vercel account |
+| **Optional** | [Obsidian](https://obsidian.md) · `uv` for the Claude Desktop server |
 
 ---
 
-## Tier 1 — vault and skill
+# Tier 1 · vault and skill
 
 ```bash
 git clone https://github.com/Dressi123/second-brain-skill.git ~/.claude/skills/second-brain
@@ -39,11 +132,15 @@ cd ~/.claude/skills/second-brain
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` is the whole setup. It was written for one Mac, so the clone is
-full of that Mac's paths and its owner's name; the script rewrites every one of
-them to yours, then creates the vault folders and the three templates the helper
-scripts expect to find. It is safe to run twice, and `--dry-run` shows you what it
-would touch first.
+`bootstrap.sh` **is** the setup. This repo was written for one Mac, so the clone is
+full of that Mac's paths and its owner's name — in `SKILL.md`, in the session
+hooks, and in the `instructions` string both MCP servers show their clients. The
+script rewrites every one of them to yours, then creates the vault folders and the
+three templates the helpers expect to find.
+
+> [!TIP]
+> It is safe to run twice, and `--dry-run` shows what it would touch before it
+> touches anything.
 
 By default the vault goes to the iCloud Obsidian location
 (`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>`). Anywhere else
@@ -53,22 +150,23 @@ is fine:
 ./bootstrap.sh --vault ~/Documents/Brain --name "Sam"
 ```
 
-It finishes by running the vault index, which is the real smoke test — if it
-prints a header and no traceback, the skill works. Then:
+It finishes by running the vault index, which is the real smoke test — a header and
+no traceback means the skill works. Then make your first hub:
 
 ```bash
-# create your first project hub
 python3 ~/.claude/skills/second-brain/helpers/new_hub.py \
   --type project --id my-app --name "My App" --description "What it is, in a sentence."
 ```
 
-Open Claude Code anywhere and ask *"what's in my second brain?"*. It should read
+Open Claude Code anywhere and ask **"what's in my second brain?"**. It should read
 `SKILL.md`, run the index, and tell you about `my-app`.
 
-### Optional: make Claude reach for it on its own
+<details>
+<summary><b>Make Claude reach for it on its own</b> — a snippet for <code>~/.claude/CLAUDE.md</code></summary>
 
-Add to `~/.claude/CLAUDE.md` (create it if it doesn't exist) so every session
-knows the vault exists:
+<br>
+
+Add this so every session knows the vault exists (create the file if it doesn't):
 
 ```markdown
 ## The second brain
@@ -80,6 +178,8 @@ start, creating hubs, and answering "what did we figure out about X?".
 Invoke it at session start in a real project directory, when I mention the
 vault, and at the end of a session where real work happened.
 ```
+
+</details>
 
 ### How the vault is organised
 
@@ -99,17 +199,18 @@ Claude follows them, so you rarely write frontmatter by hand.
 
 The scripts under `helpers/` are the API. `vault_index.py` prints the whole vault
 as a ~3k-token map, which is how Claude finds things; `search_notes.py` is
-literal-match drill-down for when you already know the phrasing. Reaching for
-search first is how you conclude something isn't in the vault when it is — the
-skill says so, at length, because it was learned the hard way.
+literal-match drill-down for when you already know the phrasing.
+
+> [!NOTE]
+> Reaching for search first is how you conclude something isn't in the vault when
+> it is. `SKILL.md` says so at length, because it was learned the hard way.
 
 ---
 
-## Tier 2 — hooks (sessions save themselves)
+# Tier 2 · sessions save themselves
 
-Merge this into `~/.claude/settings.json`. `bootstrap.sh` prints this same block
-with your paths already filled in, so copy it from there rather than editing by
-hand:
+Merge this into `~/.claude/settings.json`. `bootstrap.sh` prints the same block
+with your paths already filled in — copy it from there rather than editing by hand:
 
 ```jsonc
 {
@@ -132,17 +233,19 @@ hand:
 
 What each one costs, honestly:
 
-- **SessionStart** — reads `Inbox/` and, if anything is pending, mentions it. Cheap.
-- **Stop** — after every assistant turn, rewrites a draft summary at
-  `Claude Archive/Sessions/.drafts/<session-id>.md`. Async, so it never blocks you,
-  but it is a Claude invocation per turn.
-- **SessionEnd** — promotes the draft into a real summary, links it to its hub, and
-  validates it. Up to 900 s, async, and it decides for itself whether the session
-  was worth saving.
+| Hook | Does | Cost |
+|---|---|---|
+| `SessionStart` | reads `Inbox/`, mentions anything pending | negligible |
+| `Stop` | rewrites a draft summary at `Sessions/.drafts/<id>.md` after every turn | async, but a Claude call per turn |
+| `SessionEnd` | promotes the draft to a real summary, links the hub, validates | async, up to 900 s |
 
-There is a fourth hook, `vault_pretool_pull_hook.sh` on `PreToolUse`, that keeps
-the vault in sync with GitHub around every read and write. **Only add it if you do
-Tier 3** — without a GitHub mirror it has nothing to sync:
+`SessionEnd` decides for itself whether a session was worth saving, so quick
+lookups don't litter the vault.
+
+> [!IMPORTANT]
+> There is a fourth hook, `vault_pretool_pull_hook.sh` on `PreToolUse`, that keeps
+> the vault in sync with GitHub around every read and write. **Only add it if you
+> do Tier 3** — without a mirror it has nothing to sync.
 
 ```jsonc
 "PreToolUse": [{ "matcher": "Read|Write|Edit|Bash", "hooks": [{ "type": "command",
@@ -159,24 +262,31 @@ path actually points at the vault, so the cost is a `jq` call per tool use.
 python3 ~/.claude/skills/second-brain/helpers/brain_status.py
 ```
 
-Builds an HTML dashboard and opens it. Read the **Session drafts** panel: a row
-marked `active` is live proof the Stop hook is running. `stale`, `crashed` or
-`orphaned` mean a leftover — nothing sweeps `.drafts/`, so delete those once
-you've confirmed the work got captured. `helpers/session_hooks.log` has the raw
-trail when something looks wrong.
+Builds an HTML dashboard and opens it. Read the **Session drafts** panel:
+
+| Row | Means |
+|---|---|
+| 🟢 `active` | a session in flight — live proof the Stop hook works |
+| ⚪ `stale` | finalize never ran, and the file stopped changing >2 h ago |
+| 🔴 `crashed` | finalize was invoked but never finished |
+| 🟡 `orphaned` | finalize completed, yet the draft is still on disk |
+
+Anything but `active` is a leftover — nothing sweeps `.drafts/`, so delete those
+once you've confirmed the work got captured. `helpers/session_hooks.log` has the
+raw trail.
 
 ---
 
-## Tier 3 — phone and web access
+# Tier 3 · phone and web
 
 Two moving parts: the vault mirrors to a **private** GitHub repo, and a small
 Vercel app serves that repo to Claude as an MCP connector.
 
-### 1. Mirror the vault to GitHub
+### 1 · Mirror the vault to GitHub
 
-Create an empty **private** repo (e.g. `second-brain-vault`) and push the vault to
-it. The git directory deliberately lives *outside* the vault, at
-`~/.second-brain-git`, so Obsidian and iCloud never see a `.git/` folder:
+Create an empty **private** repo (e.g. `second-brain-vault`). The git directory
+deliberately lives *outside* the vault, at `~/.second-brain-git`, so Obsidian and
+iCloud never see a `.git/` folder:
 
 ```bash
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"  # yours
@@ -188,27 +298,34 @@ git --git-dir=$HOME/.second-brain-git --work-tree="$VAULT" commit -m "initial va
 git --git-dir=$HOME/.second-brain-git --work-tree="$VAULT" push -u origin main
 ```
 
-Put a `.gitignore` in the vault root that excludes `.DS_Store`,
+Put a `.gitignore` in the vault root excluding `.DS_Store`,
 `.obsidian/workspace*.json` and binaries (`*.png`, `*.pdf`, `Attachments/`, …).
 Markdown-only is what keeps git a sane sync backend.
 
 From then on `helpers/vault_git_sync.sh pull|push|sync` is the bridge, and the
-PreToolUse hook above calls it for you. It is deliberately **not** a launchd timer:
-macOS denies background agents access to `~/Library/Mobile Documents`, so a timer
-gets "Operation not permitted" on every file. It runs from processes that already
-have vault access instead.
+PreToolUse hook calls it for you.
 
-### 2. Deploy the connector
+> [!NOTE]
+> It is deliberately **not** a launchd timer: macOS denies background agents
+> access to `~/Library/Mobile Documents`, so a timer gets "Operation not
+> permitted" on every file. It runs from processes that already have vault access
+> instead.
 
-`vercel/README.md` has the full deploy, and it is accurate — follow it. Two things
-it assumes you've already done:
+### 2 · Deploy the connector
 
-- Step 1 above exists (the app reads the vault *from GitHub*, not from your Mac).
-- You set `VAULT_REPO` to **your** repo. It defaults to the original author's
-  private vault, which your deploy cannot read.
+[`vercel/README.md`](vercel/README.md) has the full deploy and it is accurate —
+follow it. Two things it assumes you have already done:
+
+- **Step 1 above exists.** The app reads the vault *from GitHub*, not from your Mac.
+- **`VAULT_REPO` points at your repo.**
+
+> [!WARNING]
+> `VAULT_REPO` defaults to the original author's private vault, which your deploy
+> cannot read. Set it, or the first request fails with a 404 you will spend an
+> hour on.
 
 You'll need a fine-grained GitHub PAT with Contents read+write scoped to that one
-repo — not `gh auth token`, which carries far broader scopes. Then add
+repo — **not** `gh auth token`, which carries far broader scopes. Then add
 `<your-vercel-url>/mcp` as a connector in Claude's settings.
 
 Once it's up, `capture_note` from your phone drops a note into `Inbox/`, and the
@@ -218,27 +335,27 @@ next Claude Code session on your Mac offers to file it.
 
 ## The two MCP servers
 
-Both ship in this repo, they expose the same six tools (`vault_index`,
-`search_notes`, `list_taxonomy`, `read_note`, `capture_note`, `write_note`), and
-they are independent of each other — set up either, both, or neither.
+Both ship here, both expose the same six tools — `vault_index`, `search_notes`,
+`list_taxonomy`, `read_note`, `capture_note`, `write_note` — and they are
+independent. Set up either, both, or neither.
 
-| | `mcp-server/` | `vercel/` |
+| | 🖥️ &nbsp;`mcp-server/` | ☁️ &nbsp;`vercel/` |
 |---|---|---|
-| For | Claude Desktop on the Mac | Claude on iOS and claude.ai |
-| Transport | stdio, local only | HTTPS + OAuth |
-| Reads the vault from | disk, directly | the GitHub mirror |
-| Needs | `uv` | GitHub repo + Vercel account |
-| Setup | below, ~2 minutes | Tier 3 above |
+| **For** | Claude Desktop on the Mac | Claude on iOS and claude.ai |
+| **Transport** | stdio, local only | HTTPS + OAuth |
+| **Reads the vault from** | disk, directly | the GitHub mirror |
+| **Needs** | `uv` | GitHub repo + Vercel account |
+| **Setup** | below, ~2 minutes | Tier 3 above |
 
-**Claude Code needs neither.** The skill reads the vault off disk itself, which is
-always faster and never a sync behind — `SKILL.md` says so explicitly, and tells
-Claude to ignore the remote tools when running locally.
+> [!NOTE]
+> **Claude Code needs neither.** The skill reads the vault off disk itself, which
+> is always faster and never a sync behind — `SKILL.md` tells Claude to ignore the
+> remote tools when running locally.
 
 ### Claude Desktop (local, stdio)
 
-Install [`uv`](https://docs.astral.sh/uv/) if you don't have it
-(`brew install uv`), then add this to
-`~/Library/Application Support/Claude/claude_desktop_config.json`:
+Install [`uv`](https://docs.astral.sh/uv/) if you don't have it (`brew install uv`),
+then add this to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -252,13 +369,14 @@ Install [`uv`](https://docs.astral.sh/uv/) if you don't have it
 }
 ```
 
-Absolute paths in both fields — Claude Desktop doesn't launch with your shell's
-`PATH`, so a bare `uv` is the usual reason a server shows up red. `command -v uv`
-gives you the right one. `uv` reads `pyproject.toml` and `uv.lock` in that
-directory and builds the environment on first launch; there is nothing to install
-by hand.
+> [!WARNING]
+> Absolute paths in **both** fields. Claude Desktop doesn't launch with your
+> shell's `PATH`, so a bare `uv` is the usual reason a server shows up red.
+> `command -v uv` gives you the right one.
 
-Verify it without opening the app:
+`uv` reads `pyproject.toml` and `uv.lock` in that directory and builds the
+environment on first launch; there is nothing to install by hand. Verify it
+without opening the app:
 
 ```bash
 printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}\n' \
@@ -274,23 +392,52 @@ fine for a server only something already on your Mac can launch.
 
 ## Troubleshooting
 
-**Hooks silently do nothing.** They shell out to the `claude` binary. Check
-`which claude` matches the `CLAUDE_BIN` line in
-`helpers/session_stop_draft_hook.sh`; `bootstrap.sh` sets it from your `PATH`, but
-a later install can move it. Also confirm `jq` is installed.
+<details>
+<summary><b>Hooks silently do nothing</b></summary>
 
-**A helper can't find the vault.** Everything Python reads the path from
-`helpers/vault_paths.py`, which `bootstrap.sh` rewrites. `SECOND_BRAIN_VAULT` in
-your environment overrides it. The shell hooks hold their own copy of the path —
-`grep -rn "MyVault" helpers/` finds any that got missed.
+<br>
 
-**Claude ignores the skill.** Confirm it's at `~/.claude/skills/second-brain/` with
-a readable `SKILL.md`, and that `bootstrap.sh` replaced the original author's name
-in the description — the frontmatter description is what Claude matches against.
+They shell out to the `claude` binary. Check `which claude` matches the
+`CLAUDE_BIN` line in `helpers/session_stop_draft_hook.sh` — `bootstrap.sh` sets it
+from your `PATH`, but a later install can move it. Also confirm `jq` is installed.
 
-**Sync stops.** `vault_git_sync.sh` refuses to touch a repo left mid-rebase or
-mid-merge, by design. Check `~/.second-brain-git/sync.log`, resolve by hand, and
-it resumes.
+</details>
+
+<details>
+<summary><b>A helper can't find the vault</b></summary>
+
+<br>
+
+Everything Python reads the path from `helpers/vault_paths.py`, which
+`bootstrap.sh` rewrites. `SECOND_BRAIN_VAULT` in your environment overrides it.
+The shell hooks hold their own copy of the path — `grep -rn "MyVault" helpers/`
+finds any that got missed.
+
+If the clone is **not** at `~/.claude/skills/second-brain`, the MCP servers also
+need `SECOND_BRAIN_HELPERS=<clone>/helpers`; `bootstrap.sh` warns about this.
+
+</details>
+
+<details>
+<summary><b>Claude ignores the skill</b></summary>
+
+<br>
+
+Confirm it's at `~/.claude/skills/second-brain/` with a readable `SKILL.md`, and
+that `bootstrap.sh` replaced the original author's name in the description — the
+frontmatter description is what Claude matches against.
+
+</details>
+
+<details>
+<summary><b>Sync stops</b></summary>
+
+<br>
+
+`vault_git_sync.sh` refuses to touch a repo left mid-rebase or mid-merge, by
+design. Check `~/.second-brain-git/sync.log`, resolve by hand, and it resumes.
+
+</details>
 
 ---
 
@@ -299,12 +446,13 @@ it resumes.
 ```
 SKILL.md            the instructions Claude reads — the actual product
 bootstrap.sh        makes this clone yours
-helpers/            vault_index, search_notes, list_taxonomy, validate,
-                    new_hub, add_session_to_hub, brain_status,
-                    vault_git_sync, + the four session hooks
+helpers/            vault_index · search_notes · list_taxonomy · validate
+                    new_hub · add_session_to_hub · brain_status
+                    vault_git_sync + the four session hooks
 mcp-server/         stdio MCP server for Claude Desktop (local disk)
-vercel/             hosted MCP server for iOS/web (reads the GitHub mirror)
+vercel/             hosted MCP server for iOS and web (reads the GitHub mirror)
 agents/             Codex agent card
+assets/             the banner above
 ```
 
 `SKILL.md` is worth reading start to finish even if you never touch the code. It
@@ -313,10 +461,15 @@ something went wrong first.
 
 ## A note on forking
 
-This is one person's setup, shared because it works, not a product. The
-conventions in `SKILL.md` — hub IDs, the frontmatter shape, "neither a keyword
-search nor a guess" — are opinions that earned their place; change them if yours
+This is one person's setup, shared because it works — not a product. The
+conventions in `SKILL.md` (hub IDs, the frontmatter shape, "neither a keyword
+search nor a guess") are opinions that earned their place. Change them if yours
 differ, but change them in `SKILL.md`, which is the one file everything else
 follows.
 
 The vault repo referenced in `vercel/` is private personal notes. Make your own.
+
+<div align="center">
+<br>
+<sub><b>second brain</b> · plain markdown in, context out</sub>
+</div>
