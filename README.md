@@ -1,6 +1,6 @@
 <div align="center">
 
-<img alt="second brain — a memory Claude Code actually uses" src="assets/hero.svg" width="100%">
+<img alt="second brain: a memory Claude Code actually uses" src="assets/hero.svg" width="100%">
 
 <br>
 
@@ -28,8 +28,8 @@ and links it back.
   <img alt="Recall: you ask in any repo, vault_index.py maps the vault, the right note comes back. Capture: a session ends, the hooks draft and write a summary, it is filed and linked under its project hub." src="assets/flow-light.svg" width="100%">
 </picture>
 
-It is plain markdown all the way down — Obsidian on top is optional (nice for the
-graph view and mobile editing, but nothing here depends on it).
+It is plain markdown all the way down. Obsidian on top is optional, nice for the
+graph view and mobile editing, but nothing here depends on it.
 
 <br>
 
@@ -78,7 +78,7 @@ Claude on iOS and claude.ai.
 | | |
 |---|---|
 | **Always** | macOS · Python 3.12+ · git · [Claude Code](https://claude.com/claude-code) |
-| **Tier 2** | `jq` — `brew install jq` |
+| **Tier 2** | `jq` (`brew install jq`) |
 | **Tier 3** | a GitHub account · a free Vercel account |
 | **Optional** | [Obsidian](https://obsidian.md) · `uv` for the Claude Desktop server |
 
@@ -107,7 +107,7 @@ is fine:
 ./bootstrap.sh --vault ~/Documents/Brain
 ```
 
-It finishes by running the vault index, which is the real smoke test — a header and
+It finishes by running the vault index, which is the real smoke test. A header and
 no traceback means the skill works. Then make your first hub:
 
 ```bash
@@ -120,7 +120,7 @@ Open Claude Code anywhere and ask **"what's in my second brain?"**. It should re
 
 ### Tell your agent the vault exists
 
-**Do this — it is not optional polish.** Without it the skill only fires when you
+**Do this. It is not optional polish.** Without it the skill only fires when you
 name it. With it, Claude opens a repo and loads that project's history on its
 own, and offers to write the summary at the end.
 
@@ -129,7 +129,7 @@ Add to `~/.claude/CLAUDE.md` (create the file if it isn't there):
 ```markdown
 ## The second brain
 
-I keep a personal knowledge base at `<your vault path>` — plain markdown.
+I keep a personal knowledge base at `<your vault path>`, in plain markdown.
 Use the **`second-brain` skill** at `~/.claude/skills/second-brain/` for all
 vault operations: saving session summaries, loading project context at session
 start, creating hubs, and answering "what did we figure out about X?".
@@ -138,7 +138,7 @@ vault, and at the end of a session where real work happened.
 ```
 
 <details>
-<summary><b>Using Codex too?</b> — the same pointer for <code>~/.codex/AGENTS.md</code></summary>
+<summary><b>Using Codex too?</b> The same pointer for <code>~/.codex/AGENTS.md</code></summary>
 
 <br>
 
@@ -153,14 +153,14 @@ ln -s ~/.claude/skills/second-brain ~/.codex/skills/second-brain
 ```markdown
 ## The second brain
 
-I keep a personal knowledge base at `<your vault path>` — plain markdown.
+I keep a personal knowledge base at `<your vault path>`, in plain markdown.
 Use the **`second-brain` skill** at `~/.codex/skills/second-brain/`: start with
 `helpers/vault_index.py` and pick notes by meaning, never trust a hardcoded hub
 list, and read `SKILL.md` there for the full conventions.
 
 Codex has no session hooks, so when a session produced real work, **offer** to
 save a summary and follow the "save session summary" operation in `SKILL.md`.
-Do not attach the `*_hook.sh` scripts to Codex — they invoke the Claude CLI.
+Do not attach the `*_hook.sh` scripts to Codex, since they invoke the Claude CLI.
 ```
 
 Reads are safe to do directly; ask before a vault write if the sandbox does not
@@ -190,7 +190,7 @@ Notes/, Daily/                    everything else
 
 Every note carries frontmatter naming exactly one hub (`project: my-app` or
 `topic: some-topic`) plus matching tags, and links back to its hub with a
-wikilink. That is what makes the index work — `SKILL.md` documents the rules and
+wikilink. That is what makes the index work. `SKILL.md` documents the rules and
 Claude follows them, so you rarely write frontmatter by hand.
 
 The scripts under `helpers/` are the API. `vault_index.py` prints the whole vault
@@ -206,7 +206,7 @@ literal-match drill-down for when you already know the phrasing.
 # Tier 2 · sessions save themselves
 
 Merge this into `~/.claude/settings.json`. `bootstrap.sh` prints the same block
-with your paths already filled in — copy it from there rather than editing by hand:
+with your paths already filled in, so copy it from there rather than editing by hand:
 
 ```jsonc
 {
@@ -241,7 +241,7 @@ lookups don't litter the vault.
 > [!IMPORTANT]
 > There is a fourth hook, `vault_pretool_pull_hook.sh` on `PreToolUse`, that keeps
 > the vault in sync with GitHub around every read and write. **Only add it if you
-> do Tier 3** — without a mirror it has nothing to sync.
+> do Tier 3**, since without a mirror it has nothing to sync.
 
 ```jsonc
 "PreToolUse": [{ "matcher": "Read|Write|Edit|Bash", "hooks": [{ "type": "command",
@@ -262,12 +262,12 @@ Builds an HTML dashboard and opens it. Read the **Session drafts** panel:
 
 | Row | Means |
 |---|---|
-| 🟢 `active` | a session in flight — live proof the Stop hook works |
+| 🟢 `active` | a session in flight, live proof the Stop hook works |
 | ⚪ `stale` | finalize never ran, and the file stopped changing >2 h ago |
 | 🔴 `crashed` | finalize was invoked but never finished |
 | 🟡 `orphaned` | finalize completed, yet the draft is still on disk |
 
-Anything but `active` is a leftover — nothing sweeps `.drafts/`, so delete those
+Anything but `active` is a leftover. Nothing sweeps `.drafts/`, so delete those
 once you've confirmed the work got captured. `helpers/session_hooks.log` has the
 raw trail.
 
@@ -309,19 +309,18 @@ PreToolUse hook calls it for you.
 
 ### 2 · Deploy the connector
 
-[`vercel/README.md`](vercel/README.md) has the full deploy and it is accurate —
+[`vercel/README.md`](vercel/README.md) has the full deploy and it is accurate, so
 follow it. Two things it assumes you have already done:
 
 - **Step 1 above exists.** The app reads the vault *from GitHub*, not from your Mac.
 - **`VAULT_REPO` points at your repo.**
 
 > [!WARNING]
-> `VAULT_REPO` defaults to the original author's private vault, which your deploy
-> cannot read. Set it, or the first request fails with a 404 you will spend an
-> hour on.
+> `VAULT_REPO` has no default. Set it, or the deploy fails on its first request
+> with an error that looks like a token problem.
 
 You'll need a fine-grained GitHub PAT with Contents read+write scoped to that one
-repo — **not** `gh auth token`, which carries far broader scopes. Then add
+repo. **Not** `gh auth token`, which carries far broader scopes. Then add
 `<your-vercel-url>/mcp` as a connector in Claude's settings.
 
 Once it's up, `capture_note` from your phone drops a note into `Inbox/`, and the
@@ -331,9 +330,9 @@ next Claude Code session on your Mac offers to file it.
 
 ## The two MCP servers
 
-Both ship here, both expose the same six tools — `vault_index`, `search_notes`,
-`list_taxonomy`, `read_note`, `capture_note`, `write_note` — and they are
-independent. Set up either, both, or neither.
+Both ship here, and both expose the same six tools: `vault_index`, `search_notes`,
+`list_taxonomy`, `read_note`, `capture_note`, `write_note`. They are independent,
+so set up either, both, or neither.
 
 | | 🖥️ &nbsp;`mcp-server/` | ☁️ &nbsp;`vercel/` |
 |---|---|---|
@@ -370,7 +369,7 @@ flowchart LR
 
 > [!NOTE]
 > **Claude Code needs neither.** The skill reads the vault off disk itself, which
-> is always faster and never a sync behind — `SKILL.md` tells Claude to ignore the
+> is always faster and never a sync behind. `SKILL.md` tells Claude to ignore the
 > remote tools when running locally.
 
 ### Claude Desktop (local, stdio)
@@ -406,7 +405,7 @@ printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion
 
 A JSON result naming your vault means it works. Then restart Claude Desktop.
 
-This one is **read/write** — `capture_note` and `write_note` are exposed, which is
+This one is **read/write**. `capture_note` and `write_note` are exposed, which is
 fine for a server only something already on your Mac can launch.
 
 ---
@@ -418,9 +417,8 @@ fine for a server only something already on your Mac can launch.
 
 <br>
 
-They shell out to the `claude` binary. Check `which claude` matches the
-`CLAUDE_BIN` line in `helpers/session_stop_draft_hook.sh` — `bootstrap.sh` sets it
-from your `PATH`, but a later install can move it. Also confirm `jq` is installed.
+They shell out to the `claude` binary, found on your `PATH`. Confirm
+`command -v claude` returns something, and that `jq` is installed.
 
 </details>
 
@@ -429,13 +427,13 @@ from your `PATH`, but a later install can move it. Also confirm `jq` is installe
 
 <br>
 
-Everything Python reads the path from `helpers/vault_paths.py`, which
-`bootstrap.sh` rewrites. `SECOND_BRAIN_VAULT` in your environment overrides it.
-The shell hooks hold their own copy of the path — `grep -rn "MyVault" helpers/`
-finds any that got missed.
+Everything reads it from `.bootstrap.conf`, which `bootstrap.sh` writes. Python
+goes through `helpers/vault_paths.py` and the shell hooks through
+`helpers/vault_config.sh`, and both let `SECOND_BRAIN_VAULT` in your environment
+win. Run `python3 helpers/vault_paths.py` to print what they actually resolve to.
 
 If the clone is **not** at `~/.claude/skills/second-brain`, the MCP servers also
-need `SECOND_BRAIN_HELPERS=<clone>/helpers`; `bootstrap.sh` warns about this.
+need `SECOND_BRAIN_HELPERS=<clone>/helpers`. `bootstrap.sh` warns about this.
 
 </details>
 
@@ -444,9 +442,9 @@ need `SECOND_BRAIN_HELPERS=<clone>/helpers`; `bootstrap.sh` warns about this.
 
 <br>
 
-Confirm it's at `~/.claude/skills/second-brain/` with a readable `SKILL.md`, and
-that `bootstrap.sh` replaced the original author's name in the description — the
-frontmatter description is what Claude matches against.
+Confirm it's at `~/.claude/skills/second-brain/` with a readable `SKILL.md`. The
+frontmatter description is what Claude matches against, so check it is intact.
+Then make sure you added the pointer to `~/.claude/CLAUDE.md` described above.
 
 </details>
 
@@ -465,7 +463,7 @@ design. Check `~/.second-brain-git/sync.log`, resolve by hand, and it resumes.
 ## Layout
 
 ```
-SKILL.md            the instructions Claude reads — the actual product
+SKILL.md            the instructions Claude reads, the actual product
 bootstrap.sh        makes this clone yours
 helpers/            vault_index · search_notes · list_taxonomy · validate
                     new_hub · add_session_to_hub · brain_status
@@ -482,7 +480,7 @@ something went wrong first.
 
 ## A note on forking
 
-This is one person's setup, shared because it works — not a product. The
+This is one person's setup, shared because it works, not a product. The
 conventions in `SKILL.md` (hub IDs, the frontmatter shape, "neither a keyword
 search nor a guess") are opinions that earned their place. Change them if yours
 differ, but change them in `SKILL.md`, which is the one file everything else
