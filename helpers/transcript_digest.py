@@ -81,7 +81,7 @@ def digest(path, max_chars=DEFAULT_MAX_CHARS):
                 # Harness injections, not anything a human said.
                 if role == "user" and text.startswith("<") and "system-reminder" in text[:200]:
                     continue
-                out.append(f"\n### {'ANDREAS' if role == 'user' else 'CLAUDE'}\n{clip(text)}")
+                out.append(f"\n### {'USER' if role == 'user' else 'CLAUDE'}\n{clip(text)}")
             elif kind == "tool_use" and role == "assistant":
                 tgt = target_of(b.get("name"), b.get("input"))
                 out.append(f"  -> {b.get('name')}{': ' + tgt if tgt else ''}")

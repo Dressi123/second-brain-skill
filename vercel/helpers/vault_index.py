@@ -145,7 +145,7 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--archive", action="store_true",
-                    help="Also include Claude Archive/Bulk export/ (~250 historical conversations, title-only descriptions)")
+                    help="Also include Claude Archive/Bulk export/ (~250 historical conversations; descriptions are titles, but title+hub+tags retrieves well)")
     ap.add_argument("--hub", help="Show only this hub id and its notes")
     args = ap.parse_args(argv)
 

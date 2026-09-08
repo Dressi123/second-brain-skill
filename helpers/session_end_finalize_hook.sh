@@ -37,8 +37,8 @@ fi
 # written but never pushed is invisible from the phone.
 trap '"$HOME/.claude/skills/second-brain/helpers/vault_git_sync.sh" push >/dev/null 2>&1 || true' EXIT
 
-CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-$HOME/.local/bin/claude}"
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
+CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-$(command -v claude || echo "$HOME/.local/bin/claude")}"
+. "$(dirname "${BASH_SOURCE[0]}")/vault_config.sh"   # sets VAULT
 SESSIONS="$VAULT/Claude Archive/Sessions"
 DRAFT_DIR="$SESSIONS/.drafts"
 HELPERS="$HOME/.claude/skills/second-brain/helpers"
@@ -108,7 +108,7 @@ fi
 echo "$(date '+%F %T') - SessionEnd: invoking claude -p to finalize $session_id" >> "$LOG"
 
 prompt=$(printf '%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n\n%s\n\n%s\n\n%s' \
-  "Apply the second-brain skill's \"save session summary\" operation to the Claude Code session that just ended. Read ~/.claude/skills/second-brain/SKILL.md and follow its \"Operation: save session summary\" section exactly, including the skip criteria -- most sessions should NOT get a summary; only genuinely substantial work clears the bar (\"would future-the user want to find this six months from now?\")." \
+  "Apply the second-brain skill's \"save session summary\" operation to the Claude Code session that just ended. Read ~/.claude/skills/second-brain/SKILL.md and follow its \"Operation: save session summary\" section exactly, including the skip criteria -- most sessions should NOT get a summary; only genuinely substantial work clears the bar (\"would the user want to find this six months from now?\")." \
   "Today's actual local date is $today -- use this exact date for the summary's date: frontmatter and filename. Do NOT use timestamps embedded in the transcript for this; those are UTC and can land a day ahead of local time." \
   "Current real project/topic taxonomy (already looked up for you -- do not guess or invent an ID not listed here):" \
   "$taxonomy" \
@@ -116,7 +116,7 @@ prompt=$(printf '%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n\n%s\n\n%s\n\n%s' \
   "$recent_sessions" \
   "$draft_note" \
   "$digest_block" \
-  "Write for future-the user six months out, and match the length of the session: a five-hour session earns a thorough note, not a headline list. Name the real artifacts -- file paths, type and function names, commands, commit subjects -- the tool traces above give you these, so do not settle for \"the stats service was consolidated\". Preserve the reasoning: what was tried and rejected and why, the constraint behind each decision, the bugs found and their root cause. Skip only what is genuinely ephemeral. If the session clears the bar and nothing above already covers it: use exactly one of project: or topic: in the frontmatter (never both, never invented), and write the summary to $SESSIONS/. You have no Bash access in this call -- do not attempt to run any command; just use your file-writing tool directly. If the session doesn't clear the bar, do nothing." \
+  "Write for the user six months out, and match the length of the session: a five-hour session earns a thorough note, not a headline list. Name the real artifacts -- file paths, type and function names, commands, commit subjects -- the tool traces above give you these, so do not settle for \"the stats service was consolidated\". Preserve the reasoning: what was tried and rejected and why, the constraint behind each decision, the bugs found and their root cause. Skip only what is genuinely ephemeral. If the session clears the bar and nothing above already covers it: use exactly one of project: or topic: in the frontmatter (never both, never invented), and write the summary to $SESSIONS/. You have no Bash access in this call -- do not attempt to run any command; just use your file-writing tool directly. If the session doesn't clear the bar, do nothing." \
   "When you finish, your FINAL line must be exactly one of:
 WROTE: <the full absolute path you wrote>
 SKIPPED: <one-line reason>

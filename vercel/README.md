@@ -38,7 +38,7 @@ explicit beats trusting a gitignore not to leak a credential.
 | `OAUTH_SIGNING_SECRET` | Random string. Signs every token; rotating it logs every device out |
 | `MCP_APPROVAL_PASSWORD` | Typed on the consent page when adding the connector |
 | `PUBLIC_URL` | The production URL. Set after the first deploy so metadata advertises the right issuer |
-| `VAULT_REPO` | Optional, defaults to `Dressi123/second-brain-vault` |
+| `VAULT_REPO` | `<you>/<your-vault-repo>`. Required -- there is deliberately no default |
 
 ## Deploying
 
@@ -52,8 +52,6 @@ registers against whichever host served the first request.
    it reports the note count.
 4. Add the connector in Claude's settings using `<PUBLIC_URL>/mcp`, and enter
    the approval password on the consent page.
-5. Only then retire the Mac's old server: unload
-   `com.the-user.second-brain-remote-mcp` and turn off the Tailscale Funnel.
 
 `GITHUB_TOKEN` must be a fine-grained personal access token with Contents
 read+write on the vault repo and nothing else. Do not use `gh auth token` --

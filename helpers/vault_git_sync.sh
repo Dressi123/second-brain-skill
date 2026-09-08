@@ -17,7 +17,7 @@
 # read or fail a hook. A genuine conflict exits 1 and says so.
 set -uo pipefail
 
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
+. "$(dirname "${BASH_SOURCE[0]}")/vault_config.sh"   # sets VAULT
 GIT_DIR="$HOME/.second-brain-git"
 LOG="$GIT_DIR/sync.log"
 LOCK="$GIT_DIR/sync.lock.d"

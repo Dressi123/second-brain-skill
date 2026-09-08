@@ -20,8 +20,8 @@ fi
 # written but never pushed is invisible from the phone.
 trap '"$HOME/.claude/skills/second-brain/helpers/vault_git_sync.sh" push >/dev/null 2>&1 || true' EXIT
 
-CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-$HOME/.local/bin/claude}"
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
+CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-$(command -v claude || echo "$HOME/.local/bin/claude")}"
+. "$(dirname "${BASH_SOURCE[0]}")/vault_config.sh"   # sets VAULT
 DRAFT_DIR="$VAULT/Claude Archive/Sessions/.drafts"
 LOG="$HOME/.claude/skills/second-brain/helpers/session_hooks.log"
 

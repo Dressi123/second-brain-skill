@@ -17,7 +17,7 @@ from mcp.server import MCPServer
 mcp = MCPServer(
     "second-brain",
     instructions=(
-        "the user's second brain: his Obsidian vault of ~300 markdown notes.\n\n"
+        "Your second brain: an Obsidian vault of plain markdown notes.\n\n"
         "START WITH vault_index for any question about what he has previously "
         "worked on, decided, or written down. It returns the whole curated vault "
         "as one compact map, and picking the right note from it by meaning beats "
@@ -98,7 +98,7 @@ def capture_note(title: str, body: str, tags: list[str] | None = None) -> str:
     Desktop has no end-of-session event to trigger this automatically, so
     treat it as something to call PROACTIVELY, unprompted, near the end of
     a conversation that produced something worth keeping -- a decision, an
-    answer the user will want again, a plan, a fact about his life or work --
+    answer the user will want again, a plan, a fact about their life or work --
     not only when he explicitly says 'save this' or 'remember this'. The
     bar is simple: will he want to find this again? If yes, just capture
     it; don't wait to be asked, but don't capture trivial one-off

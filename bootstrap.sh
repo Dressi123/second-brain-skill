@@ -1,193 +1,71 @@
 #!/bin/bash
-# Make this clone yours.
+# Point this clone at your vault.
 #
-# The skill was written for one Mac and hardcodes that Mac's paths and its
-# owner's name in SKILL.md, the session hooks and the Codex agent card. This
-# rewrites all of them to point at you, then scaffolds the vault folders and
-# templates the helper scripts assume already exist.
+# Writes .bootstrap.conf (gitignored) with the vault path, then creates the
+# folders and templates the helper scripts expect to find. Nothing tracked is
+# modified, so `git status` stays clean and `git pull` keeps working.
 #
 #   ./bootstrap.sh                                   # defaults, prompts once
 #   ./bootstrap.sh --vault ~/Documents/MyVault       # vault somewhere else
-#   ./bootstrap.sh --name "Sam" --yes                # no prompt
+#   ./bootstrap.sh --yes                             # no prompt
 #   ./bootstrap.sh --dry-run                         # show, change nothing
-#   ./bootstrap.sh --update                          # take upstream, re-apply
 #
-# Safe to run twice: every rewrite is a substitution of the original author's
-# values, so a second run finds nothing left to change.
-#
-# Your answers are remembered in .bootstrap.conf (gitignored), so --update and
-# any later re-run need no flags.
+# Safe to run again at any time: it rewrites the config and skips anything in
+# the vault that already exists.
 set -euo pipefail
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# What the repo ships with -- the values being replaced.
-OLD_SKILL="$HOME/.claude/skills/second-brain"
-OLD_CODEX="$HOME/.codex/skills/second-brain"
-OLD_CLAUDE_BIN="$HOME/.local/bin/claude"
-OLD_VAULT_TAIL="Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
-OLD_MARK="iCloud~md~obsidian/Documents/MyVault"
-OLD_NAME="the user"
-
-# Every tracked file this script edits in place. Named once, because --update
-# has to put exactly these back before it can pull.
-REWRITTEN=(
-  SKILL.md
-  agents/openai.yaml
-  helpers/new_hub.py
-  helpers/vault_paths.py
-  helpers/session_end_finalize_hook.sh
-  helpers/session_start_inbox_check.sh
-  helpers/session_stop_draft_hook.sh
-  helpers/vault_git_sync.sh
-  helpers/vault_pretool_pull_hook.sh
-  mcp-server/server.py
-  vercel/app.py
-  vercel/oauth_stateless.py
-)
-
 CONF="$SKILL_DIR/.bootstrap.conf"
+DEFAULT_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
 
 VAULT=""
-NAME=""
 ASSUME_YES=0
 DRY_RUN=0
-UPDATE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --vault)   VAULT="${2:?--vault needs a path}"; shift 2 ;;
-    --name)    NAME="${2:?--name needs a name}";   shift 2 ;;
     --yes|-y)  ASSUME_YES=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
-    --update)  UPDATE=1; shift ;;
-    -h|--help) sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
 
-# Answers from last time, so a re-run after an update needs no flags.
-if [ -f "$CONF" ]; then
+# Reuse last run's answer, so a re-run after a pull needs no flags.
+if [ -z "$VAULT" ] && [ -f "$CONF" ]; then
   # shellcheck disable=SC1090
-  . "$CONF"
-  [ -n "$VAULT" ] || VAULT="${CONF_VAULT:-}"
-  [ -n "$NAME" ]  || NAME="${CONF_NAME:-}"
+  . "$CONF"; VAULT="${CONF_VAULT:-}"
 fi
-[ -n "$VAULT" ] || VAULT="$HOME/$OLD_VAULT_TAIL"
-
-# --update: this script rewrites tracked files in place, so a bootstrapped
-# clone is permanently dirty and `git pull` refuses to run. Put those files
-# back, take upstream, then re-apply -- which is safe precisely because every
-# rewrite here is mechanical and idempotent.
-if [ "$UPDATE" = 1 ]; then
-  command -v git >/dev/null || { echo "--update needs git" >&2; exit 1; }
-  cd "$SKILL_DIR" || exit 1
-  echo "Discarding this script's rewrites so the pull can apply:"
-  for f in "${REWRITTEN[@]}"; do [ -f "$f" ] && printf '  %s\n' "$f"; done
-  echo
-  echo "Edits of your own to those files go too. Anything else is untouched."
-  if [ "$ASSUME_YES" = 0 ]; then
-    read -r -p "Continue? [y/N] " reply
-    case "$reply" in y|Y|yes|Yes) ;; *) echo "nothing changed."; exit 0 ;; esac
-  fi
-  git checkout -- "${REWRITTEN[@]}" 2>/dev/null
-  git pull --ff-only || { echo "pull failed -- resolve by hand, then re-run ./bootstrap.sh --yes" >&2; exit 1; }
-  echo
-  echo "Pulled. Re-applying your settings..."
-  ASSUME_YES=1
-fi
-
+[ -n "$VAULT" ] || VAULT="$DEFAULT_VAULT"
 VAULT="${VAULT/#\~/$HOME}"
 VAULT="${VAULT%/}"
-[ -n "$NAME" ] || NAME="$(id -F 2>/dev/null | awk '{print $1}')"
-[ -n "$NAME" ] || NAME="$USER"
-
-# The PreToolUse hook decides whether a tool call touches the vault by
-# substring-matching its path. Relative-to-home is the shortest string that
-# still only matches this vault.
-case "$VAULT" in
-  "$HOME"/*) MARK="${VAULT#"$HOME"/}" ;;
-  *)         MARK="$VAULT" ;;
-esac
-
-CLAUDE_BIN="$(command -v claude || true)"
-[ -n "$CLAUDE_BIN" ] || CLAUDE_BIN="$HOME/.local/bin/claude"
 
 cat <<EOF
 
   skill directory   $SKILL_DIR
   vault             $VAULT
-  your name         $NAME
-  claude binary     $CLAUDE_BIN
 
 EOF
 
 if [ "$DRY_RUN" = 0 ] && [ "$ASSUME_YES" = 0 ]; then
-  read -r -p "Rewrite the skill to use these? [y/N] " reply
+  read -r -p "Use this vault? [y/N] " reply
   case "$reply" in y|Y|yes|Yes) ;; *) echo "nothing changed."; exit 0 ;; esac
 fi
 
 run() { if [ "$DRY_RUN" = 1 ]; then echo "  would: $*"; else "$@"; fi; }
 
-# ---------------------------------------------------------------- 1. rewrite
+# ------------------------------------------------------------------ config
 
-# `|` as the sed delimiter: every value here is a path full of slashes.
-rewrite() {
-  local file="$1"
-  [ -f "$file" ] || return 0
-  if [ "$DRY_RUN" = 1 ]; then echo "  would rewrite: ${file#"$SKILL_DIR"/}"; return 0; fi
-  sed -i '' \
-    -e "s|$OLD_CLAUDE_BIN|$CLAUDE_BIN|g" \
-    -e "s|\$HOME/$OLD_VAULT_TAIL|$VAULT|g" \
-    -e "s|~/$OLD_VAULT_TAIL|$VAULT|g" \
-    -e "s|$HOME/$OLD_VAULT_TAIL|$VAULT|g" \
-    -e "s|$OLD_SKILL|$SKILL_DIR|g" \
-    -e "s|$OLD_CODEX|$HOME/.codex/skills/second-brain|g" \
-    -e "s|$OLD_MARK|$MARK|g" \
-    -e "s|$OLD_NAME|$NAME|g" \
-    "$file"
-  echo "  rewrote: ${file#"$SKILL_DIR"/}"
-}
-
-# helpers/vault_paths.py is the one place every Python helper AND the local
-# MCP server get the vault path from, and it composes the original author's
-# iCloud path piece by piece rather than as one string -- so it needs its own
-# rewrite rather than a substitution.
-set_default_vault() {
-  local file="$SKILL_DIR/helpers/vault_paths.py"
-  if [ "$DRY_RUN" = 1 ]; then echo "  would point helpers/vault_paths.py at the vault"; return 0; fi
-  VAULT="$VAULT" python3 - "$file" <<'PY'
-import os, re, sys
-path = sys.argv[1]
-src = open(path).read()
-new = 'DEFAULT_VAULT = Path(%r)\n' % os.environ["VAULT"]
-# Replace the multi-line Path(...) composition, or an earlier run's one-liner.
-src, n = re.subn(r'DEFAULT_VAULT = \((?:.|\n)*?\n\)\n|DEFAULT_VAULT = Path\(.*\)\n', new, src, count=1)
-if n != 1:
-    sys.exit("could not find DEFAULT_VAULT in %s -- set it by hand" % path)
-open(path, "w").write(src)
-PY
-  echo "  rewrote: helpers/vault_paths.py (DEFAULT_VAULT)"
-}
-
-if [ "$DRY_RUN" = 0 ]; then
-  printf 'CONF_VAULT=%q\nCONF_NAME=%q\n' "$VAULT" "$NAME" > "$CONF"
+if [ "$DRY_RUN" = 1 ]; then
+  echo "  would write $CONF"
+else
+  printf 'CONF_VAULT=%q\n' "$VAULT" > "$CONF"
+  echo "Wrote .bootstrap.conf (gitignored) — every helper reads the vault path from here."
 fi
-
-echo "Rewriting paths and name:"
-set_default_vault
-rewrite "$SKILL_DIR/SKILL.md"
-rewrite "$SKILL_DIR/agents/openai.yaml"
-for f in "$SKILL_DIR"/helpers/*.sh "$SKILL_DIR"/helpers/new_hub.py; do rewrite "$f"; done
-# Both MCP servers put the owner's name in the `instructions` string every
-# client displays, so this is not cosmetic -- Claude Desktop and Claude on iOS
-# read it on connect.
-rewrite "$SKILL_DIR/mcp-server/server.py"
-rewrite "$SKILL_DIR/vercel/app.py"
-rewrite "$SKILL_DIR/vercel/oauth_stateless.py"
 run chmod +x "$SKILL_DIR"/helpers/*.sh "$SKILL_DIR"/vercel/sync_helpers.sh
 
-# mcp-server/vault_tools.py finds the helpers at ~/.claude/skills/second-brain
+# mcp-server/vault_tools.py looks for the helpers at the default install path
 # unless told otherwise, so a clone anywhere else needs one env var.
 if [ "$SKILL_DIR" != "$HOME/.claude/skills/second-brain" ]; then
   echo
@@ -195,7 +73,7 @@ if [ "$SKILL_DIR" != "$HOME/.claude/skills/second-brain" ]; then
   echo "  For the MCP servers, export SECOND_BRAIN_HELPERS=$SKILL_DIR/helpers"
 fi
 
-# --------------------------------------------------------------- 2. scaffold
+# ---------------------------------------------------------------- scaffold
 
 echo
 echo "Scaffolding the vault:"
@@ -213,8 +91,8 @@ done
 # is not decoration. The other two are the Obsidian templates that go with it.
 write_template() {
   local path="$VAULT/Templates/$1.md"
-  if [ -e "$path" ]; then echo "  exists: Templates/$1.md"; return 0; fi
-  if [ "$DRY_RUN" = 1 ]; then echo "  would create: Templates/$1.md"; return 0; fi
+  if [ -e "$path" ]; then echo "  exists: Templates/$1.md"; cat > /dev/null; return 0; fi
+  if [ "$DRY_RUN" = 1 ]; then echo "  would create: Templates/$1.md"; cat > /dev/null; return 0; fi
   cat > "$path"
   echo "  created: Templates/$1.md"
 }
@@ -242,7 +120,7 @@ tags: [claude-session]
 - [ ]
 
 ## Context for next time
-<!-- What does future-Claude need to know to pick this up cold? -->
+<!-- What does future-you need to know to pick this up cold? -->
 
 ## Reference
 <!-- Link to original chat if available, or paste key excerpts. -->
@@ -300,7 +178,7 @@ tags: [daily]
 <!-- Anything from today worth promoting to a Project, Note, or Claude Archive entry -->
 EOF
 
-# ----------------------------------------------------------------- 3. verify
+# ------------------------------------------------------------------ verify
 
 echo
 if [ "$DRY_RUN" = 1 ]; then
@@ -308,20 +186,14 @@ if [ "$DRY_RUN" = 1 ]; then
   exit 0
 fi
 
-# Skipped when you ARE the original author (testing on that Mac), where the
-# rewritten values are byte-identical to the originals and every hit is false.
-leftovers=""
-if [ "$HOME" != "$HOME" ]; then
-  leftovers=$(grep -rln "$HOME\|$OLD_MARK" \
-    "$SKILL_DIR/SKILL.md" "$SKILL_DIR/agents" "$SKILL_DIR"/helpers/*.sh \
-    "$SKILL_DIR"/helpers/*.py 2>/dev/null || true)
-fi
-if [ -n "$leftovers" ]; then
-  echo "WARNING -- the original author's paths still appear in:"
-  printf '  %s\n' $leftovers
-  echo "Open those and fix them by hand before relying on the skill."
+resolved=$(python3 "$SKILL_DIR/helpers/vault_paths.py")
+if [ "$resolved" != "$VAULT" ]; then
+  echo "WARNING -- the helpers resolve the vault to:"
+  echo "  $resolved"
+  echo "which is not what you asked for. \$SECOND_BRAIN_VAULT in your environment wins"
+  echo "over .bootstrap.conf; unset it, or use it consistently."
 else
-  echo "No hardcoded paths from the original author remain."
+  echo "Helpers agree the vault is $resolved"
 fi
 
 echo
@@ -330,18 +202,18 @@ python3 "$SKILL_DIR/helpers/vault_index.py" | head -3 || true
 
 cat <<EOF
 
-Done. The skill works now -- ask Claude Code "what's in my second brain?".
+Done. Ask Claude Code "what's in my second brain?".
 
-To make it automatic, add the hooks to ~/.claude/settings.json (Tier 2 in the
-README). The block for YOUR paths:
+Two things left, both in the README:
+  1. Add the pointer to ~/.claude/CLAUDE.md so Claude reaches for the skill
+     unprompted. This is the difference between a skill that fires when you
+     name it and one that loads a project's history when you open its repo.
+  2. Add the hooks to ~/.claude/settings.json to have sessions save themselves:
 
   "permissions": {
     "additionalDirectories": ["$VAULT"]
   },
   "hooks": {
-    "PreToolUse": [{ "matcher": "Read|Write|Edit|Bash", "hooks": [{ "type": "command",
-      "command": "bash $SKILL_DIR/helpers/vault_pretool_pull_hook.sh",
-      "timeout": 20, "statusMessage": "Syncing second-brain vault..." }] }],
     "SessionStart": [{ "hooks": [{ "type": "command",
       "command": "bash $SKILL_DIR/helpers/session_start_inbox_check.sh",
       "timeout": 15, "statusMessage": "Checking second-brain inbox..." }] }],

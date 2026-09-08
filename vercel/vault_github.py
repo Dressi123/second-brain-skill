@@ -24,7 +24,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-REPO = os.environ.get("VAULT_REPO", "Dressi123/second-brain-vault")
+# No default: a wrong one silently points a deploy at somebody else's
+# private vault and fails with a 404 that looks like a token problem.
+REPO = os.environ["VAULT_REPO"]
 BRANCH = os.environ.get("VAULT_BRANCH", "main")
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 API = "https://api.github.com"

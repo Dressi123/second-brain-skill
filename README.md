@@ -92,22 +92,19 @@ cd ~/.claude/skills/second-brain
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` **is** the setup. This repo was written for one Mac, so the clone is
-full of that Mac's paths and its owner's name — in `SKILL.md`, in the session
-hooks, and in the `instructions` string both MCP servers show their clients. The
-script rewrites every one of them to yours, then creates the vault folders and the
-three templates the helpers expect to find.
+`bootstrap.sh` **is** the setup. It writes `.bootstrap.conf` with your vault
+path and creates the folders and templates the helpers expect to find. Nothing
+tracked is modified, so `git status` stays clean and `git pull` keeps working.
 
 > [!TIP]
-> It is safe to run twice, and `--dry-run` shows what it would touch before it
-> touches anything.
+> Safe to run again any time, and `--dry-run` shows what it would touch first.
 
 By default the vault goes to the iCloud Obsidian location
 (`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>`). Anywhere else
 is fine:
 
 ```bash
-./bootstrap.sh --vault ~/Documents/Brain --name "Sam"
+./bootstrap.sh --vault ~/Documents/Brain
 ```
 
 It finishes by running the vault index, which is the real smoke test — a header and
@@ -173,18 +170,12 @@ already allow it.
 
 ### Keeping it up to date
 
-`bootstrap.sh` edits tracked files in place, so a set-up clone is permanently
-dirty and a plain `git pull` refuses to run. Take updates with:
-
 ```bash
-cd ~/.claude/skills/second-brain
-./bootstrap.sh --update
+cd ~/.claude/skills/second-brain && git pull
 ```
 
-It puts the rewritten files back, fast-forwards, then re-applies your vault path
-and name from `.bootstrap.conf` — no flags to remember. It tells you which files
-it resets first; edits of your own to those go with them, and anything else in
-the clone is untouched.
+Your vault path lives in `.bootstrap.conf`, which git ignores, so a pull never
+touches it and there is nothing to re-apply.
 
 ### How the vault is organised
 

@@ -20,7 +20,7 @@ if [ -n "${SECOND_BRAIN_HOOK:-}" ]; then
   exit 0
 fi
 
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
+. "$(dirname "${BASH_SOURCE[0]}")/vault_config.sh"   # sets VAULT
 INBOX="$VAULT/Inbox"
 HELPERS="$HOME/.claude/skills/second-brain/helpers"
 LOG="$HELPERS/session_hooks.log"
@@ -60,9 +60,9 @@ if status_nudge == '1':
     parts.append(
         'It has been a while since the vault status dashboard was last '
         'generated, and there has been hook activity since then. Consider '
-        'mentioning that the user can regenerate it '
+        'mentioning that you can regenerate it '
         '(python3 ~/.claude/skills/second-brain/helpers/brain_status.py) '
-        'if he wants a current view -- do not run it yourself unasked.'
+        'if they want a current view -- do not run it yourself unasked.'
     )
 print(json.dumps({
     'hookSpecificOutput': {

@@ -2,11 +2,10 @@
 # Copy the vault code this deployment needs out of the skill directory.
 #
 # Vendored rather than shared, because Vercel deploys one directory and this
-# one must stay small: the skill directory next door holds .oauth_password
-# and .remote_token, and a gitignore slip there would publish a credential.
+# one must stay small and explicit about what it ships.
 # Re-run after changing any helper, then redeploy.
 set -euo pipefail
-SRC="$HOME/.claude/skills/second-brain"
+SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$(cd "$(dirname "$0")" && pwd)"
 
 mkdir -p "$DEST/helpers"

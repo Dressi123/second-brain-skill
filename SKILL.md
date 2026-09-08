@@ -1,11 +1,11 @@
 ---
 name: second-brain
-description: the user's personal knowledge base ("second brain") in an Obsidian vault at ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault. Use in Claude Code or Codex for vault operations such as saving session summaries, loading project/topic context, creating hubs, querying past notes, and answering "what did we figure out about X?" Trigger on "second brain", "the vault", "save this session", "load context", "what did we work on for [project]", or clear references to ongoing work that may have saved context. Discover the live taxonomy with helpers/vault_index.py; never trust hardcoded hub lists.
+description: The user's personal knowledge base ("second brain") -- an Obsidian vault of plain markdown on this Mac. Use in Claude Code or Codex for vault operations such as saving session summaries, loading project/topic context, creating hubs, querying past notes, and answering "what did we figure out about X?" Trigger on "second brain", "the vault", "save this session", "load context", "what did we work on for [project]", or clear references to ongoing work that may have saved context. Discover the live taxonomy with helpers/vault_index.py; never trust hardcoded hub lists.
 ---
 
 # Second-brain operations
 
-the user keeps a personal knowledge base at `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault` — an Obsidian vault of plain markdown. This skill is the single source of truth for how to interact with it.
+The user keeps a personal knowledge base in an Obsidian vault of plain markdown. Every helper resolves the vault's location itself; run `python3 ~/.claude/skills/second-brain/helpers/vault_paths.py` if you need the path literally, and write `<vault>` for it below. This skill is the single source of truth for how to interact with it.
 
 **When running locally in Claude Code or Codex, always use the helper scripts
 below — never the remote Second Brain MCP tools, even when they are offered.**
@@ -14,9 +14,9 @@ them reads the vault's GitHub-hosted copy, so it is a network round trip away an
 can lag the working copy on this Mac. Local agents have the real vault on disk,
 and these scripts read it directly.
 
-The maintained skill source is `$HOME/.claude/skills/second-brain`.
-This Codex installation discovers that same folder through a symlink at
-`$HOME/.codex/skills/second-brain`, so there is only one copy to keep up
+The maintained skill source is `~/.claude/skills/second-brain`.
+Codex discovers that same folder through a symlink at
+`~/.codex/skills/second-brain`, so there is only one copy to keep up
 to date. Commands below use the maintained source path and work from either agent.
 
 Vault reads are safe to perform directly. Before a write, move, or deletion,
@@ -34,7 +34,7 @@ the manual operation below until a Codex-specific finalizer is installed.
 Before doing anything substantive in the vault, run:
 
 ```bash
-python3 $HOME/.claude/skills/second-brain/helpers/vault_index.py
+python3 ~/.claude/skills/second-brain/helpers/vault_index.py
 ```
 
 This prints a compact map of the whole vault (~3k tokens): every curated note's path, hub, tags, and one-line description, grouped under its project/topic hub. **This is the primary way to find anything** — read the descriptions, pick the note that matches by meaning, then read that path with the available local file tools.
@@ -44,7 +44,7 @@ Useful flags: `--hub <id>` for one project/topic only (~1k tokens); `--archive` 
 When you only need to *validate* that a hub ID exists (before writing or tagging a note) and don't need the full map, the cheaper call is:
 
 ```bash
-python3 $HOME/.claude/skills/second-brain/helpers/list_taxonomy.py
+python3 ~/.claude/skills/second-brain/helpers/list_taxonomy.py
 ```
 
 **Use real IDs from one of these — never trust hardcoded lists, including any that might appear in CLAUDE.md or AGENTS.md.** The vault is the source of truth.
@@ -69,7 +69,7 @@ When starting a session that's clearly tied to ongoing work — a specific code 
 2. Try to match the working directory name, recent file content, README, or the user's first message to one of the project/topic IDs.
 3. If you find a match:
    ```bash
-   python3 $HOME/.claude/skills/second-brain/helpers/vault_index.py --hub <id>
+   python3 ~/.claude/skills/second-brain/helpers/vault_index.py --hub <id>
    ```
    That returns the hub's description plus every note filed under it, newest first, each with a one-line description — no separate grep needed.
    - Read the 2–3 whose descriptions look most relevant.
@@ -89,7 +89,7 @@ This ordering is deliberate and was measured. On a real question ("what did we d
 **Full-text drill-down — `search_notes.py`:**
 
 ```bash
-python3 $HOME/.claude/skills/second-brain/helpers/search_notes.py "<query>"
+python3 ~/.claude/skills/second-brain/helpers/search_notes.py "<query>"
 ```
 
 Use it when you already know the exact phrasing you want (an error message, a command, a name, a specific term), or to dig into the ~250 bulk-export archive notes, where the index only has titles.
@@ -102,10 +102,10 @@ Use it when you already know the exact phrasing you want (an error message, a co
 
 ## Operation: show status dashboard
 
-When the user asks to see the vault's status/health, or a Claude Code SessionStart hook nudges that it's been a while since he last checked:
+When the user asks to see the vault's status/health, or a Claude Code SessionStart hook nudges that it's been a while since they last checked:
 
 ```bash
-python3 $HOME/.claude/skills/second-brain/helpers/brain_status.py
+python3 ~/.claude/skills/second-brain/helpers/brain_status.py
 ```
 
 Generates a local HTML dashboard (taxonomy, recent sessions, Inbox pending, session drafts, hook health from the log) and opens it in the default browser. It's a snapshot at generation time, not live -- regenerate for a fresh view. Only run this when asked or when the SessionStart nudge suggests it; never run it unprompted just because it exists.
@@ -129,7 +129,7 @@ When the session has produced real work — decisions made, code shipped, a thre
 
 1. Pick a date and a short slug describing the topic.
 2. Identify the matching project ID or topic ID from current taxonomy. If none matches, see "suggest a new hub" below.
-3. Write to: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault/Claude Archive/Sessions/<YYYY-MM-DD>-<slug>.md`
+3. Write to: `<vault>/Claude Archive/Sessions/<YYYY-MM-DD>-<slug>.md`
 4. Use this frontmatter shape (one of `project:` or `topic:`, not both):
 
    ```yaml
@@ -148,12 +148,12 @@ When the session has produced real work — decisions made, code shipped, a thre
    tags: [claude-session, topic/<topic-id>]
    ```
 
-5. Use the body structure from `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault/Templates/Claude Session Summary.md`.
+5. Use the body structure from `<vault>/Templates/Claude Session Summary.md`.
 6. **Always include an explicit wikilink to the hub in the body** — e.g. `[[Travel App (Wanderlust)]]`. This is what creates the graph edge that clusters the summary with its hub. Without it, the summary floats orphaned.
 7. **Always link back from the hub to the session** — a forward link alone leaves the hub stale and the session undiscoverable from the hub side (this was a real, recurring miss — most 2026-08-24 sessions had no hub linking back to them). Run:
 
    ```bash
-   python3 $HOME/.claude/skills/second-brain/helpers/add_session_to_hub.py \
+   python3 ~/.claude/skills/second-brain/helpers/add_session_to_hub.py \
      --hub "<path to hub note>" \
      --session "<session filename, no .md>" \
      --date <YYYY-MM-DD> \
@@ -164,12 +164,12 @@ When the session has produced real work — decisions made, code shipped, a thre
 8. After writing, validate:
 
    ```bash
-   python3 $HOME/.claude/skills/second-brain/helpers/validate.py "<path to summary>"
+   python3 ~/.claude/skills/second-brain/helpers/validate.py "<path to summary>"
    ```
 
    Fix any errors it reports.
 
-Skip summaries entirely for quick lookups, single-question chats, or trivial fixes. The bar is: **would future-the user want to find this six months from now?** If unsure, skip.
+Skip summaries entirely for quick lookups, single-question chats, or trivial fixes. The bar is: **would the user want to find this six months from now?** If unsure, skip.
 
 ---
 
@@ -181,9 +181,9 @@ If a session is producing work that **deserves a permanent home** in the second 
 
 Triggers (any one is enough):
 
-- the user explicitly says he's "starting" or "building" something new.
+- The user explicitly says they're "starting" or "building" something new.
 - It's the second or third session on the same topic.
-- Multiple files / decisions / real intent — i.e. future-the user will want this context next time.
+- Multiple files / decisions / real intent — i.e. the user will want this context next time.
 - He says something like "remember this," "we'll come back to this," or "save this."
 
 Default is *no new hub* unless the work is genuinely substantial. Don't trigger on every chat.
@@ -195,7 +195,7 @@ Default is *no new hub* unless the work is genuinely substantial. Don't trigger 
 When the user approves a new hub:
 
 ```bash
-python3 $HOME/.claude/skills/second-brain/helpers/new_hub.py \
+python3 ~/.claude/skills/second-brain/helpers/new_hub.py \
   --type project \
   --id <new-id> \
   --name "<Display Name>" \

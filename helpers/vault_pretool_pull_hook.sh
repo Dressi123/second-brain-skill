@@ -16,9 +16,14 @@
 # exits before touching the network.
 set -uo pipefail
 
-VAULT_MARK="iCloud~md~obsidian/Documents/MyVault"
+_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$_here/vault_config.sh"   # sets VAULT
+
+# Match on the vault path relative to home -- the shortest string that still
+# only matches this vault, and one that carries no home directory of its own.
+VAULT_MARK="${VAULT#"$HOME"/}"
 HELPERS_MARK="skills/second-brain/helpers"
-SYNC="$HOME/.claude/skills/second-brain/helpers/vault_git_sync.sh"
+SYNC="$_here/vault_git_sync.sh"
 
 payload=$(cat)
 [ -x "$SYNC" ] || exit 0
