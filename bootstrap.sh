@@ -63,7 +63,12 @@ else
   printf 'CONF_VAULT=%q\n' "$VAULT" > "$CONF"
   echo "Wrote .bootstrap.conf (gitignored) — every helper reads the vault path from here."
 fi
-run chmod +x "$SKILL_DIR"/helpers/*.sh "$SKILL_DIR"/vercel/sync_helpers.sh
+# Not vault_config.sh -- it is sourced, never executed, and marking it +x
+# shows the clone as modified for a mode bit it does not want.
+for _s in "$SKILL_DIR"/helpers/*.sh; do
+  case "$_s" in *_hook.sh|*vault_git_sync.sh) run chmod +x "$_s" ;; esac
+done
+run chmod +x "$SKILL_DIR/vercel/sync_helpers.sh"
 
 # mcp-server/vault_tools.py looks for the helpers at the default install path
 # unless told otherwise, so a clone anywhere else needs one env var.
