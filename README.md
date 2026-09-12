@@ -231,7 +231,7 @@ What each one costs, honestly:
 
 | Hook | Does | Cost |
 |---|---|---|
-| `SessionStart` | reads `Inbox/`, mentions anything pending | negligible |
+| `SessionStart` | shows a one-line vault status (inbox, dashboard age, matching hub) and has Claude's first reply ask what to act on | negligible |
 | `Stop` | rewrites a draft summary at `Sessions/.drafts/<id>.md` after every turn | async, but a Claude call per turn |
 | `SessionEnd` | promotes the draft to a real summary, links the hub, validates | async, up to 900 s |
 

@@ -212,7 +212,7 @@ Because the skill always discovers taxonomy live from the vault, **no manual upd
 
 ## Operation: triage inbox
 
-`Inbox/` holds quick captures from Desktop/iOS (via the `capture_note` MCP tool) waiting to be properly filed. In Claude Code, a SessionStart hook checks it and, if non-empty, adds a note to the session context -- that's the cue to offer triage early on. No Codex lifecycle hooks are configured by this shared skill, so triage when the user asks or when an explicitly requested vault status/check reveals pending captures; do not scan the Inbox on every unrelated task.
+`Inbox/` holds quick captures from Desktop/iOS (via the `capture_note` MCP tool) waiting to be properly filed. In Claude Code, a SessionStart hook checks it, shows the user a one-line vault status as the session opens, and tells the model to open its first reply with an AskUserQuestion offering triage, hub context, and a dashboard refresh -- that's the cue to offer triage early on. No Codex lifecycle hooks are configured by this shared skill, so triage when the user asks or when an explicitly requested vault status/check reveals pending captures; do not scan the Inbox on every unrelated task.
 
 1. List `Inbox/*.md` (top level only -- ignore `.drafts/` or other hidden entries).
 2. Run `list_taxonomy.py` to get the current, real project/topic IDs.
