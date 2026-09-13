@@ -149,7 +149,7 @@ When the session has produced real work — decisions made, code shipped, a thre
    ```
 
 5. Use the body structure from `<vault>/Templates/Claude Session Summary.md`.
-6. **Always include an explicit wikilink to the hub in the body** — e.g. `[[Travel App (Wanderlust)]]`. This is what creates the graph edge that clusters the summary with its hub. Without it, the summary floats orphaned.
+6. **Always include an explicit wikilink to the hub in the body** — e.g. `[[Travel App]]`. This is what creates the graph edge that clusters the summary with its hub. Without it, the summary floats orphaned.
 7. **Always link back from the hub to the session** — a forward link alone leaves the hub stale and the session undiscoverable from the hub side (this was a real, recurring miss — most 2026-08-24 sessions had no hub linking back to them). Run:
 
    ```bash
@@ -228,7 +228,7 @@ Same rule as saving session summaries: never invent a project/topic ID to make s
 
 ## Hygiene
 
-- Wikilinks use file basename only: `[[Travel App (Wanderlust)]]`, never the full path.
+- Wikilinks use file basename only: `[[Travel App]]`, never the full path.
 - Don't modify files in `Claude Archive/Bulk export/` — it's the historical archive.
 - New session summaries go in `Claude Archive/Sessions/`, not anywhere else.
 - Don't tag new files with `#claude-archive` or `#bulk-export` — those are export-only markers and pollute the graph.

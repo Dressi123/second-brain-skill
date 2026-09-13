@@ -45,12 +45,22 @@ if [ -f "$LOG" ]; then
 fi
 
 # 3. Whether the session's working directory has a hub: a project/topic
-#    whose frontmatter id equals the directory's basename. Claude Code
+#    whose frontmatter id equals the directory's basename, ignoring case and
+#    punctuation so a `TravelApp` folder finds `id: travel-app`. Claude Code
 #    passes the cwd on stdin; fall back to $PWD if that isn't readable.
 cwd=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null)
 cwd=${cwd:-$PWD}
 hub_name=""
-hub_file=$(grep -l -x "id: $(basename "$cwd")" "$VAULT"/Projects/*.md "$VAULT"/Notes/Topics/*.md 2>/dev/null | head -1)
+norm() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]'; }
+want=$(norm "$(basename "$cwd")")
+hub_file=""
+for f in "$VAULT"/Projects/*.md "$VAULT"/Notes/Topics/*.md; do
+  id=$(sed -n 's/^id:[[:space:]]*//p' "$f" 2>/dev/null | head -1)
+  if [ -n "$id" ] && [ "$(norm "$id")" = "$want" ]; then
+    hub_file=$f
+    break
+  fi
+done
 if [ -n "$hub_file" ]; then
   hub_name=$(basename "$hub_file" .md)
 fi
