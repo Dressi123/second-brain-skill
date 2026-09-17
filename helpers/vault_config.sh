@@ -23,4 +23,17 @@ fi
 [ -n "${VAULT:-}" ] || \
   VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
 
+# Optional second vault: a read-only mirror of the main vault, on a machine
+# whose own vault is local and unsynced (a work laptop that may not push its
+# notes anywhere). Reads may span both; every write still goes to $VAULT.
+# Empty on a single-vault machine, which is the normal case.
+if [ -n "${SECOND_BRAIN_MIRROR:-}" ]; then
+  MIRROR="$SECOND_BRAIN_MIRROR"
+elif [ -f "$_vc_conf" ]; then
+  # shellcheck disable=SC1090
+  . "$_vc_conf"
+  MIRROR="${CONF_MIRROR:-}"
+fi
+[ -d "${MIRROR:-}" ] || MIRROR=""
+
 unset _vc_helpers _vc_conf

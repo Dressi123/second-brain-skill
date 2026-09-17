@@ -54,12 +54,17 @@ hub_name=""
 norm() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]'; }
 want=$(norm "$(basename "$cwd")")
 hub_file=""
-for f in "$VAULT"/Projects/*.md "$VAULT"/Notes/Topics/*.md; do
-  id=$(sed -n 's/^id:[[:space:]]*//p' "$f" 2>/dev/null | head -1)
-  if [ -n "$id" ] && [ "$(norm "$id")" = "$want" ]; then
-    hub_file=$f
-    break
-  fi
+# $MIRROR is the read-only second vault, empty unless this machine has one.
+# A hub over there answers "does this directory have history?" just as well,
+# and that answer is most of what this hook is for.
+for _root in "$VAULT" ${MIRROR:+"$MIRROR"}; do
+  for f in "$_root"/Projects/*.md "$_root"/Notes/Topics/*.md; do
+    id=$(sed -n 's/^id:[[:space:]]*//p' "$f" 2>/dev/null | head -1)
+    if [ -n "$id" ] && [ "$(norm "$id")" = "$want" ]; then
+      hub_file=$f
+      break 2
+    fi
+  done
 done
 if [ -n "$hub_file" ]; then
   hub_name=$(basename "$hub_file" .md)

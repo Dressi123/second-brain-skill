@@ -19,12 +19,14 @@ CONF="$SKILL_DIR/.bootstrap.conf"
 DEFAULT_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault"
 
 VAULT=""
+MIRROR=""
 ASSUME_YES=0
 DRY_RUN=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --vault)   VAULT="${2:?--vault needs a path}"; shift 2 ;;
+    --mirror)  MIRROR="${2:?--mirror needs a path}"; shift 2 ;;
     --yes|-y)  ASSUME_YES=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help) sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -33,18 +35,22 @@ while [ $# -gt 0 ]; do
 done
 
 # Reuse last run's answer, so a re-run after a pull needs no flags.
-if [ -z "$VAULT" ] && [ -f "$CONF" ]; then
+if [ -f "$CONF" ]; then
   # shellcheck disable=SC1090
-  . "$CONF"; VAULT="${CONF_VAULT:-}"
+  . "$CONF"
+  [ -n "$VAULT" ]  || VAULT="${CONF_VAULT:-}"
+  [ -n "$MIRROR" ] || MIRROR="${CONF_MIRROR:-}"
 fi
 [ -n "$VAULT" ] || VAULT="$DEFAULT_VAULT"
 VAULT="${VAULT/#\~/$HOME}"
 VAULT="${VAULT%/}"
+MIRROR="${MIRROR/#\~/$HOME}"; MIRROR="${MIRROR%/}"
 
 cat <<EOF
 
   skill directory   $SKILL_DIR
   vault             $VAULT
+  mirror            ${MIRROR:-(none)}
 
 EOF
 
@@ -61,6 +67,8 @@ if [ "$DRY_RUN" = 1 ]; then
   echo "  would write $CONF"
 else
   printf 'CONF_VAULT=%q\n' "$VAULT" > "$CONF"
+  # Optional read-only second vault; omitted entirely on a one-vault machine.
+  [ -n "$MIRROR" ] && printf 'CONF_MIRROR=%q\n' "$MIRROR" >> "$CONF"
   echo "Wrote .bootstrap.conf (gitignored) — every helper reads the vault path from here."
 fi
 # Not vault_config.sh -- it is sourced, never executed, and marking it +x
