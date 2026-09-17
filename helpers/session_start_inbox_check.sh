@@ -9,6 +9,10 @@
 # 2. Staleness of the status dashboard -- if it's been >24h since it was
 #    last generated AND there's been real hook activity since then,
 #    nudge to offer regenerating it. Never auto-runs it.
+# 3. Whether the cwd has a project/topic hub, searched across both vaults.
+#
+# The one thing here that is not a read: a throttled `git pull` of the
+# optional read-only second vault, so recall in this session is current.
 set -uo pipefail
 
 # Recursion guard: the SessionEnd finalize hook makes headless `claude -p`
@@ -25,6 +29,34 @@ INBOX="$VAULT/Inbox"
 HELPERS="$HOME/.claude/skills/second-brain/helpers"
 LOG="$HELPERS/session_hooks.log"
 STATUS_MARKER="$HELPERS/.last_status_view"
+
+# 3. Freshness of the optional read-only second vault ($MIRROR, empty on a
+#    one-vault machine): pull it as the session opens, so the hub search
+#    below and any recall this session does see what the other machine
+#    wrote. Synchronous on purpose -- backgrounding it would land after the
+#    hub search had already run -- but bounded and throttled, because a dead
+#    network must not hold a session open and back-to-back sessions should
+#    not each pay a round trip. Failure is logged and ignored; if the hook
+#    exceeds its timeout Claude Code kills it and the session continues.
+mirror_refresh() {
+  [ -n "${MIRROR:-}" ] || return 0
+  local gitdir stamp age
+  gitdir=$(git -C "$MIRROR" rev-parse --absolute-git-dir 2>/dev/null) || return 0
+  stamp="$gitdir/.last-mirror-pull"
+  if [ -f "$stamp" ]; then
+    age=$(( $(date +%s) - $(stat -f %m "$stamp" 2>/dev/null || echo 0) ))
+    [ "$age" -lt "${MIRROR_FRESH_SECS:-600}" ] && return 0
+  fi
+  if GIT_TERMINAL_PROMPT=0 GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=5 \
+     git -C "$MIRROR" pull --quiet --rebase --autostash >>"$LOG" 2>&1; then
+    touch "$stamp"
+    echo "$(date '+%F %T') - SessionStart: refreshed mirror $MIRROR" >> "$LOG"
+  else
+    echo "$(date '+%F %T') - SessionStart: mirror pull failed (offline?), using local copy" >> "$LOG"
+  fi
+  return 0
+}
+mirror_refresh
 
 inbox_count=$(find "$INBOX" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
 echo "$(date '+%F %T') - SessionStart: inbox check, $inbox_count pending" >> "$LOG"
