@@ -214,6 +214,15 @@ Because the skill always discovers taxonomy live from the vault, **no manual upd
 
 `Inbox/` holds quick captures from Desktop/iOS (via the `capture_note` MCP tool) waiting to be properly filed. In Claude Code, a SessionStart hook checks it, shows the user a one-line vault status as the session opens, and tells the model to open its first reply with an AskUserQuestion offering triage, hub context, and a dashboard refresh -- that's the cue to offer triage early on. No Codex lifecycle hooks are configured by this shared skill, so triage when the user asks or when an explicitly requested vault status/check reveals pending captures; do not scan the Inbox on every unrelated task.
 
+**Step 0 -- let the script file the clear ones (Claude Code only).** It asks TypeSafe's Jev classifier to pick a hub for each capture and does the mechanical filing (frontmatter, hub back-link under `## Captures`, move to `Notes/`, validate, roll back on failure) for picks at confidence >= 0.8. It never rewrites a capture's body. Dry-run first, show the user the proposals, and apply only once they agree:
+
+```bash
+~/.claude/skills/second-brain/helpers/triage_inbox.py           # proposals only
+~/.claude/skills/second-brain/helpers/triage_inbox.py --apply   # file the confident ones
+```
+
+Everything it reports under REVIEW is yours to triage by hand with the steps below: low-confidence picks, `none`, and hand-made notes with no `source:` key (never auto-filed). Run it directly, not with `python3`: it is a `uv` script that brings its own `typesafe-sdk` dependency. It needs a TypeSafe key (`$TYPESAFE_API_KEY` or the keychain item `typesafe-api-key`); without one it files nothing and every capture falls through to the manual steps. `--backtest` re-scores it against captures already filed in `Notes/`, useful after hubs change. Codex and the MCP server skip Step 0.
+
 1. List `Inbox/*.md` (top level only -- ignore `.drafts/` or other hidden entries).
 2. Run `list_taxonomy.py` to get the current, real project/topic IDs.
 3. For each item, read it and decide:

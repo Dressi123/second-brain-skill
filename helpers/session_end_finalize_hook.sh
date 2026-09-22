@@ -105,6 +105,20 @@ else
   digest_block="No digest could be produced; the raw transcript is at $transcript."
 fi
 
+# Activity gate: below 2 real user turns + tool calls (greetings, /login, one
+# lookup) Sonnet would only read the digest to skip it; see activity() in
+# transcript_digest.py. Fails open on a bad count. The draft is moved, not
+# deleted, so a wrong skip can be recovered by hand.
+activity="$(python3 "$HELPERS/transcript_digest.py" "$transcript" --activity 2>/dev/null)"
+if [[ "$activity" =~ ^[0-9]+$ ]] && [ "$activity" -lt 2 ]; then
+  echo "$(date '+%F %T') - SessionEnd: $session_id activity gate skip (activity=$activity)" >> "$LOG"
+  if [ -f "$draft" ]; then
+    mkdir -p "$DRAFT_DIR/.gate-skipped"
+    mv "$draft" "$DRAFT_DIR/.gate-skipped/"
+  fi
+  exit 0
+fi
+
 echo "$(date '+%F %T') - SessionEnd: invoking claude -p to finalize $session_id" >> "$LOG"
 
 prompt=$(printf '%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n\n%s\n\n%s\n\n%s' \

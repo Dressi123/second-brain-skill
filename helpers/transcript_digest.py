@@ -19,7 +19,8 @@ instead of saying "the stats service was consolidated".
 Dropped: tool results, thinking blocks, sidechain (subagent/skill) turns,
 and system-reminder injections.
 
-Usage: transcript_digest.py <transcript.jsonl> [--max-chars N]
+Usage: transcript_digest.py <transcript.jsonl> [--max-chars N] [--activity]
+  --activity prints the activity() count instead of the digest.
 """
 import json
 import sys
@@ -94,6 +95,17 @@ def digest(path, max_chars=DEFAULT_MAX_CHARS):
     return text
 
 
+def activity(text):
+    """Real user turns (not slash-command/caveat noise) + tool calls.
+
+    The SessionEnd hook skips the Sonnet finalizer below 2. Checked
+    2026-09-21 against 60 real past sessions: it caught 8 of the 25 that
+    Sonnet judged trivial and none of the 35 it summarized.
+    """
+    users = [b for b in text.split("\n### USER\n")[1:] if not b.lstrip().startswith("<")]
+    return len(users) + text.count("\n  -> ")
+
+
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:]]
     cap = DEFAULT_MAX_CHARS
@@ -101,6 +113,12 @@ if __name__ == "__main__":
         i = args.index("--max-chars")
         cap = int(args[i + 1])
         del args[i:i + 2]
+    want_activity = "--activity" in args
+    if want_activity:
+        args.remove("--activity")
     if not args:
-        sys.exit("usage: transcript_digest.py <transcript.jsonl> [--max-chars N]")
-    sys.stdout.write(digest(args[0], cap))
+        sys.exit("usage: transcript_digest.py <transcript.jsonl> [--max-chars N] [--activity]")
+    if want_activity:
+        print(activity(digest(args[0], cap)))
+    else:
+        sys.stdout.write(digest(args[0], cap))
