@@ -20,7 +20,8 @@ Dropped: tool results, thinking blocks, sidechain (subagent/skill) turns,
 and system-reminder injections.
 
 Usage: transcript_digest.py <transcript.jsonl> [--max-chars N] [--activity]
-  --activity prints the activity() count instead of the digest.
+  --activity prints the activity() count instead of the digest; pass "-" as
+  the path to count an existing digest piped on stdin.
 """
 import json
 import sys
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     if not args:
         sys.exit("usage: transcript_digest.py <transcript.jsonl> [--max-chars N] [--activity]")
     if want_activity:
-        print(activity(digest(args[0], cap)))
+        # "-" reads an already-built digest from stdin instead of re-parsing.
+        print(activity(sys.stdin.read() if args[0] == "-" else digest(args[0], cap)))
     else:
         sys.stdout.write(digest(args[0], cap))

@@ -107,9 +107,10 @@ fi
 
 # Activity gate: below 2 real user turns + tool calls (greetings, /login, one
 # lookup) Sonnet would only read the digest to skip it; see activity() in
-# transcript_digest.py. Fails open on a bad count. The draft is moved, not
-# deleted, so a wrong skip can be recovered by hand.
-activity="$(python3 "$HELPERS/transcript_digest.py" "$transcript" --activity 2>/dev/null)"
+# transcript_digest.py. Fails open: no digest or a bad count proceeds. The
+# draft is moved, not deleted, so a wrong skip can be recovered by hand.
+activity=""
+[ -n "$digest" ] && activity="$(printf '%s' "$digest" | python3 "$HELPERS/transcript_digest.py" - --activity 2>/dev/null)"
 if [[ "$activity" =~ ^[0-9]+$ ]] && [ "$activity" -lt 2 ]; then
   echo "$(date '+%F %T') - SessionEnd: $session_id activity gate skip (activity=$activity)" >> "$LOG"
   if [ -f "$draft" ]; then
