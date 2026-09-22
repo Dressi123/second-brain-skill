@@ -167,7 +167,8 @@ When the session has produced real work — decisions made, code shipped, a thre
    python3 ~/.claude/skills/second-brain/helpers/validate.py "<path to summary>"
    ```
 
-   Fix any errors it reports.
+   Fix any errors it reports. (The same script validates triaged captures, in a
+   different mode it picks automatically -- see "triage inbox" below.)
 
 Skip summaries entirely for quick lookups, single-question chats, or trivial fixes. The bar is: **would the user want to find this six months from now?** If unsure, skip.
 
@@ -229,7 +230,22 @@ Everything it reports under REVIEW is yours to triage by hand with the steps bel
    - **Clear match to an existing project/topic**: fix its frontmatter to use exactly one of `project:`/`topic:` with the real ID (a capture's `tags:` list may already hint at one, e.g. `topic/finance-housing` -- verify it's real via the taxonomy, don't just trust it blindly). Add a wikilink to the file from that hub's note, under whatever existing section fits (or a new `## Captures` section if none does). Then move the file to `Notes/<same filename>.md` and remove it from `Inbox/` -- this keeps the Inbox item count meaning "still pending," not "everything ever captured."
    - **No clear match -- looks like a genuinely new topic or project**: do not force it into an existing hub and do not auto-create one. Pause and ask, exactly like "suggest a new hub" above. Leave it in `Inbox/` until the user decides.
    - **Ambiguous, or too little content to tell**: ask rather than guess.
-4. Report briefly what got filed and what's still waiting on a decision.
+4. After moving each one, validate it:
+
+   ```bash
+   python3 ~/.claude/skills/second-brain/helpers/validate.py "<path to the filed capture>"
+   ```
+
+   It auto-detects capture mode from the `source:` key and the
+   `claude-<surface>-capture` tag, so there is no flag to pass (`--mode capture`
+   forces it if you ever need to). Capture mode checks the **back-link**: that
+   the hub you just edited really does link to this file. A capture's body
+   carries no `[[Hub Name]]` wikilink -- unlike a session summary, which owns its
+   edge -- so the hub's link is the only thing making it reachable, and a typo in
+   the filename there leaves the note orphaned and silent. A capture still in
+   `Inbox/` reports as pending rather than failing.
+
+5. Report briefly what got filed and what's still waiting on a decision.
 
 Same rule as saving session summaries: never invent a project/topic ID to make something fit.
 
