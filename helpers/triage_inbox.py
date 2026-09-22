@@ -35,6 +35,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -47,6 +48,10 @@ from vault_paths import VAULT  # noqa: E402
 # matched the hub the capture was filed under.
 JEV_MIN_CONF = 0.8
 BODY_CHARS = 6_000
+# TypeSafe's launch price (2026-09-15): input tokens only, output is free.
+USD_PER_M_INPUT = 0.042
+
+jev_calls = []  # (latency_ms, input_tokens) per call, for the cost line
 
 FM_RE = re.compile(r"\A---\n(.*?)\n---\n?", re.S)
 
@@ -101,10 +106,12 @@ def ask_jev(cap, hubs, client):
     criteria["none"] = "Fits none of these hubs; a genuinely new subject."
     state = {"title": cap["title"], "tags": [t for t in cap["tags"] if not t.startswith("claude-")],
              "body": cap["body"][:BODY_CHARS]}
+    t0 = time.perf_counter()
     response = client.system_one(state, {"hub": Choice(
         instructions="Which hub in a personal knowledge base should this captured note be filed under?",
         criteria=criteria,
     )})
+    jev_calls.append(((time.perf_counter() - t0) * 1000, response.usage.input_tokens or 0))
     a = response.answers["hub"]
     return a.choice, a.confidence
 
@@ -210,13 +217,23 @@ def backtest(hubs, client):
         print(f"    {mark} {conf:.2f}  truth={truth:<20} {how[:60]:<60} {name[:40]}")
 
 
+def print_jev_cost():
+    if not jev_calls:
+        return
+    ms = sorted(c[0] for c in jev_calls)
+    tokens = sum(c[1] for c in jev_calls)
+    print(f"\nJev: {len(ms)} calls, median {ms[len(ms) // 2]:.0f} ms, slowest {ms[-1]:.0f} ms, "
+          f"{tokens:,} input tokens = ${tokens * USD_PER_M_INPUT / 1e6:.6f}")
+
+
 def main():
     key = api_key()
     if not key:
         print("(no TypeSafe key: nothing will be filed, every capture goes to review)")
         return run(load_hubs(), None)
     with TypeSafeClient(api_key=key) as client:  # retries 429/529 with backoff
-        return run(load_hubs(), client)
+        run(load_hubs(), client)
+    print_jev_cost()
 
 
 def run(hubs, client):
