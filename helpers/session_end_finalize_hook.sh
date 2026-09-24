@@ -37,7 +37,11 @@ fi
 # written but never pushed is invisible from the phone.
 trap '"$HOME/.claude/skills/second-brain/helpers/vault_git_sync.sh" push >/dev/null 2>&1 || true' EXIT
 
-CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-$(command -v claude || echo "$HOME/.local/bin/claude")}"
+# CLAUDE_CODE_EXECPATH is fixed when the session starts, so a Claude Code
+# upgrade mid-session (Homebrew removes the old version's folder) leaves it
+# pointing at a binary that no longer exists. Only trust it if it's still there.
+CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-}"
+[ -x "$CLAUDE_BIN" ] || CLAUDE_BIN="$(command -v claude || echo "$HOME/.local/bin/claude")"
 . "$(dirname "${BASH_SOURCE[0]}")/vault_config.sh"   # sets VAULT
 SESSIONS="$VAULT/Claude Archive/Sessions"
 DRAFT_DIR="$SESSIONS/.drafts"
@@ -143,8 +147,10 @@ No other text after that line.")
 # logged into a subscription. `--strict-mcp-config` drops MCP server
 # definitions this call never uses. Deliberately NOT touching --allowedTools
 # or adding --tools here: this hook's tool permissions are load-bearing (see
-# the design note at the top) and have broken twice before.
-response=$(SECOND_BRAIN_HOOK=1 env -u ANTHROPIC_API_KEY "$CLAUDE_BIN" -p "$prompt" \
+# the design note at the top) and have broken twice before. The prompt goes
+# in on stdin: it inlines the digest, which on a long session is big enough to
+# hit the argument limit that already broke the Stop hook.
+response=$(printf '%s' "$prompt" | SECOND_BRAIN_HOOK=1 env -u ANTHROPIC_API_KEY "$CLAUDE_BIN" -p \
   --model claude-sonnet-5 \
   --add-dir "$VAULT" \
   --permission-mode acceptEdits \
@@ -155,6 +161,7 @@ response=$(SECOND_BRAIN_HOOK=1 env -u ANTHROPIC_API_KEY "$CLAUDE_BIN" -p "$promp
 echo "$response" >> "$LOG"
 
 outcome_line=$(echo "$response" | grep -E '^(WROTE|SKIPPED):' | tail -1)
+saved=""
 
 if [[ "$outcome_line" == WROTE:* ]]; then
   written_path="$(echo "${outcome_line#WROTE:}" | xargs)"
@@ -183,9 +190,11 @@ Fix the frontmatter/content in that exact file to address these specific errors 
         rm -f "$written_path"
       else
         echo "$(date '+%F %T') - SessionEnd: validation passed after fix: $written_path" >> "$LOG"
+        saved=1
       fi
     else
       echo "$(date '+%F %T') - SessionEnd: validation passed: $written_path" >> "$LOG"
+      saved=1
     fi
   else
     echo "$(date '+%F %T') - SessionEnd: model reported WROTE but file not found: $written_path" >> "$LOG"
@@ -194,6 +203,15 @@ else
   echo "$(date '+%F %T') - SessionEnd: no summary written ($outcome_line)" >> "$LOG"
 fi
 
-rm -f "$draft"
+# Only a saved summary makes the draft redundant. A skip is not always a
+# verdict on the session: with no matching hub the model has to skip even a
+# five-hour session, and deleting the draft then lost it outright. Move it
+# aside instead (same as the activity gate), out of the dashboard's view.
+if [ -n "$saved" ]; then
+  rm -f "$draft"
+elif [ -f "$draft" ]; then
+  mkdir -p "$DRAFT_DIR/.skipped"
+  mv "$draft" "$DRAFT_DIR/.skipped/"
+fi
 echo "$(date '+%F %T') - SessionEnd: done for $session_id" >> "$LOG"
 exit 0

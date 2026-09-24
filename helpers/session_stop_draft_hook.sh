@@ -20,7 +20,11 @@ fi
 # written but never pushed is invisible from the phone.
 trap '"$HOME/.claude/skills/second-brain/helpers/vault_git_sync.sh" push >/dev/null 2>&1 || true' EXIT
 
-CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-$(command -v claude || echo "$HOME/.local/bin/claude")}"
+# CLAUDE_CODE_EXECPATH is fixed when the session starts, so a Claude Code
+# upgrade mid-session (Homebrew removes the old version's folder) leaves it
+# pointing at a binary that no longer exists. Only trust it if it's still there.
+CLAUDE_BIN="${CLAUDE_CODE_EXECPATH:-}"
+[ -x "$CLAUDE_BIN" ] || CLAUDE_BIN="$(command -v claude || echo "$HOME/.local/bin/claude")"
 . "$(dirname "${BASH_SOURCE[0]}")/vault_config.sh"   # sets VAULT
 DRAFT_DIR="$VAULT/Claude Archive/Sessions/.drafts"
 LOG="$HOME/.claude/skills/second-brain/helpers/session_hooks.log"
@@ -44,7 +48,10 @@ draft="$DRAFT_DIR/${session_id}.md"
 existing=""
 [ -f "$draft" ] && existing=$(cat "$draft")
 
-recent=$(tail -n 60 "$transcript")
+# Lines are capped because one JSONL line can hold a whole tool result (a
+# file dump, a big diff): 60 of them measured several MB on a long session,
+# more than Haiku can take and more than the arg limit (see stdin note below).
+recent=$(tail -n 60 "$transcript" | cut -c1-4000)
 
 prompt=$(printf 'You maintain a lightweight running draft note for an in-progress Claude Code session, so nothing is lost if it ends abnormally. This is NOT the final curated note -- just terse continuity notes.\n\nExisting draft (may be empty):\n---\n%s\n---\n\nMost recent transcript activity (JSONL, one event per line):\n---\n%s\n---\n\nRewrite the draft as a short bullet list: what is being worked on, key decisions/facts so far, open threads. Merge in anything new from the recent activity. Keep it under 200 words. Output ONLY the new draft content -- no preamble, no commentary, no code fences.' "$existing" "$recent")
 
@@ -63,7 +70,10 @@ prompt=$(printf 'You maintain a lightweight running draft note for an in-progres
 #    The real instructions live in $prompt (the user message), so replacing the
 #    default system prompt is safe. Worth keeping on a subscription too —
 #    fewer tokens means less rate-limit burn and lower latency.
-new_draft=$(SECOND_BRAIN_HOOK=1 env -u ANTHROPIC_API_KEY "$CLAUDE_BIN" -p "$prompt" \
+#
+# The prompt goes in on stdin, not as an argument: passed as an argument it
+# failed with "/usr/bin/env: Argument list too long" on 22 of ~116 turns.
+new_draft=$(printf '%s' "$prompt" | SECOND_BRAIN_HOOK=1 env -u ANTHROPIC_API_KEY "$CLAUDE_BIN" -p \
   --model claude-haiku-4-5-20251001 \
   --tools "" \
   --strict-mcp-config \
