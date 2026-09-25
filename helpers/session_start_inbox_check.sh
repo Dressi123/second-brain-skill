@@ -98,6 +98,40 @@ for _root in "$VAULT" ${MIRROR:+"$MIRROR"}; do
     fi
   done
 done
+# No id matched: try Obsidian's own `aliases:` property, so a hub can answer
+# for a directory whose name it doesn't carry (the `slim-tx-engine` repo is
+# the `snaplogic-slim-mcp` hub, which lists `aliases: [SLIM TX Engine]`).
+# A second pass rather than part of the first so an exact id always wins,
+# and one python call for all hubs since it only runs on a miss.
+if [ -z "$hub_file" ]; then
+  hub_file=$(python3 - "$want" "$VAULT"/Projects/*.md "$VAULT"/Notes/Topics/*.md \
+             ${MIRROR:+"$MIRROR"/Projects/*.md "$MIRROR"/Notes/Topics/*.md} <<'PY' 2>/dev/null
+import re, sys
+norm = lambda s: "".join(c for c in s.lower() if c.isalnum())
+want = sys.argv[1]
+for f in sys.argv[2:]:
+    try:
+        fm = re.match(r"---\n(.*?)\n---", open(f, encoding="utf-8").read(), re.S)
+    except OSError:
+        continue
+    if not fm:
+        continue
+    fm = fm.group(1)
+    # Both YAML forms Obsidian writes: `aliases: [A, B]` and a `- A` list.
+    inline = re.search(r"^aliases:[ \t]*\[(.*?)\]", fm, re.M)
+    block = re.search(r"^aliases:[ \t]*\n((?:[ \t]*-.*(?:\n|$))+)", fm, re.M)
+    if inline:
+        vals = inline.group(1).split(",")
+    elif block:
+        vals = [l.strip()[1:] for l in block.group(1).splitlines()]
+    else:
+        continue
+    if any(norm(v.strip().strip("'\"")) == want for v in vals):
+        print(f)
+        break
+PY
+)
+fi
 if [ -n "$hub_file" ]; then
   hub_name=$(basename "$hub_file" .md)
 fi
