@@ -25,7 +25,8 @@ Measured locally: ~2.0s to materialize 308 notes cold, ~0.33s warm.
     helpers/             vendored from ../helpers
 
 `vault_tools.py` and `helpers/` are copies. Run `./sync_helpers.sh` after
-changing either original, then redeploy. They are vendored rather than shared
+changing either original and commit the copies: Vercel deploys only what is
+committed under `vercel/`, so an edit to an original alone never ships. They are vendored rather than shared
 because Vercel deploys one directory, and the skill directory next door holds
 `.oauth_password` and `.remote_token` -- keeping the deploy surface small and
 explicit beats trusting a gitignore not to leak a credential.
@@ -40,18 +41,35 @@ explicit beats trusting a gitignore not to leak a credential.
 | `PUBLIC_URL` | The production URL. Set after the first deploy so metadata advertises the right issuer |
 | `VAULT_REPO` | `<you>/<your-vault-repo>`. Required -- there is deliberately no default |
 
+Scope `GITHUB_TOKEN`, `OAUTH_SIGNING_SECRET` and `MCP_APPROVAL_PASSWORD` to
+Production only. Every push to another branch builds a preview deployment, and
+a preview holding `GITHUB_TOKEN` can write to the vault.
+
 ## Deploying
 
-Order matters. Do not add the connector before `PUBLIC_URL` is set, or Claude
-registers against whichever host served the first request.
+Vercel builds from this repo's GitHub connection: every push to `main` that
+touches `vercel/` deploys to production. The project settings that make that
+work:
 
-1. `vercel deploy --prod` from this directory.
-2. Set the four environment variables (below), then `vercel deploy --prod`
-   again so `PUBLIC_URL` takes effect.
+- **Root Directory** `vercel`, with *Include files outside the root directory*
+  off, so the deploy is exactly this folder.
+- **Skip deployments when there are no changes to the root directory** on, so a
+  push that only touches the skill or the Mac server does not redeploy.
+- **Production branch** `main`.
+
+First-time setup. Order matters: do not add the connector before `PUBLIC_URL`
+is set, or Claude registers against whichever host served the first request.
+
+1. Import the repo in Vercel and apply the settings above.
+2. Set the five environment variables, then redeploy so `PUBLIC_URL` takes
+   effect.
 3. `curl -H 'X-Health-Key: <approval password>' <PUBLIC_URL>/health` and confirm
    it reports the note count.
 4. Add the connector in Claude's settings using `<PUBLIC_URL>/mcp`, and enter
    the approval password on the consent page.
+
+After that, shipping a change is committing it and pushing. `vercel deploy
+--prod` from this directory still works for deploying uncommitted work.
 
 `GITHUB_TOKEN` must be a fine-grained personal access token with Contents
 read+write on the vault repo and nothing else. Do not use `gh auth token` --
