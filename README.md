@@ -4,6 +4,7 @@
 
 <br>
 
+[![M8ven Score](https://m8ven.ai/badge/mcp/dressi123/second-brain-skill)](https://m8ven.ai/mcp/dressi123/second-brain-skill)
 ![macOS](https://img.shields.io/badge/macOS-0F172A?style=flat-square&logo=apple&logoColor=white)
 ![Python 3.12+](https://img.shields.io/badge/Python-3.12+-4ECDC4?style=flat-square&logo=python&logoColor=white)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-skill-6366F1?style=flat-square)
