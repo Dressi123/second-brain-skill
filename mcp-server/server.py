@@ -34,7 +34,7 @@ mcp = MCPServer(
 )
 
 
-@mcp.tool()
+@mcp.tool(annotations=vt.READ_ONLY)
 def vault_index(include_archive: bool = False, hub: str | None = None) -> str:
     """START HERE for any question about what the user has previously worked on,
     decided, or written down. Returns a compact map of the vault -- every note's
@@ -58,7 +58,7 @@ def vault_index(include_archive: bool = False, hub: str | None = None) -> str:
     return vt.vault_index(include_archive=include_archive, hub=hub)
 
 
-@mcp.tool()
+@mcp.tool(annotations=vt.READ_ONLY)
 def search_notes(query: str, regex: bool = False, limit: int = 20) -> str:
     """Full-text drill-down: find which notes contain a specific literal string
     or regex, with a short excerpt per match. This is NOT the tool for
@@ -73,7 +73,7 @@ def search_notes(query: str, regex: bool = False, limit: int = 20) -> str:
     return vt.search_notes(query, regex=regex, limit=limit)
 
 
-@mcp.tool()
+@mcp.tool(annotations=vt.READ_ONLY)
 def list_taxonomy() -> str:
     """Cheap (~200 token) list of just the valid project/topic IDs and their
     display names, scanned live. Use this to VALIDATE an id before writing or
@@ -83,7 +83,7 @@ def list_taxonomy() -> str:
     return vt.list_taxonomy()
 
 
-@mcp.tool()
+@mcp.tool(annotations=vt.READ_ONLY)
 def read_note(path: str) -> str:
     """Read the full content of one note by its vault-relative path, e.g.
     'Projects/FakeOut (ML Fraud Detection).md' -- as returned by vault_index or
@@ -91,7 +91,7 @@ def read_note(path: str) -> str:
     return vt.read_note(path)
 
 
-@mcp.tool()
+@mcp.tool(annotations=vt.APPEND)
 def capture_note(title: str, body: str, tags: list[str] | None = None) -> str:
     """Capture a quick note into the vault's Inbox for later triage.
 
@@ -112,7 +112,7 @@ def capture_note(title: str, body: str, tags: list[str] | None = None) -> str:
     return vt.capture_note(title, body, tags=tags, source="claude-desktop")
 
 
-@mcp.tool()
+@mcp.tool(annotations=vt.OVERWRITE)
 def write_note(path: str, content: str) -> str:
     """Create or overwrite one note at a specific vault-relative path with the
     given full content. For a NEW ad hoc capture, prefer capture_note (handles

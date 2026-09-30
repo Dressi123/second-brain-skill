@@ -13,6 +13,25 @@ from datetime import datetime
 from importlib import import_module
 from pathlib import Path
 
+from mcp.types import ToolAnnotations
+
+# Behaviour hints for each tool, shared so both servers declare the same
+# thing. All four are explicit on every tool: hosts (and OpenAI's directory)
+# treat a missing hint as unknown rather than as a safe default. None of the
+# tools reach past the user's own vault, so openWorldHint is False throughout,
+# even where a write ends up as a commit to the vault's GitHub mirror.
+READ_ONLY = ToolAnnotations(
+    read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False,
+)
+# capture_note: adds a new, uniquely named file every call -- never replaces one.
+APPEND = ToolAnnotations(
+    read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=False,
+)
+# write_note: replaces whatever is at the path, so the same call twice is harmless.
+OVERWRITE = ToolAnnotations(
+    read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False,
+)
+
 HELPERS = Path(
     os.environ.get("SECOND_BRAIN_HELPERS")
     or Path.home() / ".claude" / "skills" / "second-brain" / "helpers"
