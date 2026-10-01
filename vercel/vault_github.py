@@ -21,6 +21,7 @@ import shutil
 import tarfile
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -117,9 +118,15 @@ def _extract_into(sha: str) -> None:
             shutil.move(str(item), str(VAULT_DIR / item.name))
 
 
+def _contents_url(path: str) -> str:
+    # Note names carry spaces and punctuation; http.client rejects a raw space
+    # outright, so encode each segment and keep the slashes as separators.
+    return f"/repos/{REPO}/contents/{urllib.parse.quote(path, safe='/')}"
+
+
 def _blob_sha(path: str) -> str | None:
     try:
-        info = _request("GET", f"/repos/{REPO}/contents/{path}?ref={BRANCH}")
+        info = _request("GET", f"{_contents_url(path)}?ref={urllib.parse.quote(BRANCH)}")
     except VaultError as exc:
         if "-> 404" in str(exc):
             return None
@@ -146,7 +153,7 @@ def put_file(path: str, content: str, message: str) -> str:
         if sha:
             payload["sha"] = sha
         try:
-            result = _request("PUT", f"/repos/{REPO}/contents/{path}", payload)
+            result = _request("PUT", _contents_url(path), payload)
         except VaultError as exc:
             if "-> 409" in str(exc) and attempt == 1:
                 continue   # someone else wrote first; re-read and retry once
