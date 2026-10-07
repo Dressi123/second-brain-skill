@@ -262,6 +262,9 @@ text to `Inbox/` with `/vault-capture`, and denies a `Write` into `Inbox/`,
 that guard denies one of your writes, add the frontmatter and write again; don't work
 around it.
 
+On a stuck draft, its `save as summary` button spawns a general-purpose agent that ends with a
+`SAVED: <path>` or `SKIPPED: <reason>` line, which the pane parses.
+
 Its pane can start triage without going through you: `Triage inbox` runs
 `triage_inbox.py`, and `triage` on a row spawns the `inbox-triage` agent for one
 capture, asking it to end with a `HUB: <id> | <reason>` line. Filing is a second spawn

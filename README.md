@@ -288,6 +288,7 @@ logic.
 | a pane with the inbox, hub sessions, drafts and hook health | `/vault` |
 | click-to-triage: `Triage inbox` runs `triage_inbox.py` and shows each proposal inline; `triage` on a row asks an `inbox-triage` subagent about that one capture | the pane |
 | saving the text you highlighted to `Inbox/` | `/vault-capture` (fullscreen mode) |
+| fixing stuck drafts: `archive` moves an orphaned draft aside; `save as summary` has a subagent turn a crashed or stale draft into a summary under the right hub | the pane's DRAFTS card |
 | a guard that denies a `Write` into the vault missing `date:` frontmatter | automatic; fails open |
 | the HTML dashboard rebuilt for you when stale | once per session |
 

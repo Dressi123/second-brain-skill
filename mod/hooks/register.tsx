@@ -12,7 +12,7 @@ const IDLE: TriageState = { phase: 'idle', proposed: [], review: [], filed: [], 
 const triage = atom({ plugin: 'second-brain-mod', key: 'triage' } as const, IDLE)
 
 // Subagents this mod started, by agent id: their answer arrives as their own turn.complete.
-const waiting: Record<string, { file: string; kind: 'ask' | 'apply' }> = {}
+const waiting: Record<string, { file: string; kind: 'ask' | 'apply' | 'save' }> = {}
 
 const isStuck = (state: string) => state !== 'active' && state !== 'finalizing'
 // One committed palette: warm ink, a slate for chrome, amber for "look at this",
@@ -45,7 +45,7 @@ async function openTarget($: EngineInterface, target: string): Promise<void> {
 async function setAsk(
   $: EngineInterface,
   file: string,
-  ask: { kind: 'ask' | 'apply'; status: 'running' | 'done' | 'failed'; text: string; hub: string | null },
+  ask: { kind: 'ask' | 'apply' | 'save'; status: 'running' | 'done' | 'failed'; text: string; hub: string | null },
 ): Promise<void> {
   await update($, triage, t => ({ ...t, asks: { ...t.asks, [file]: ask } }))
 }
@@ -105,7 +105,24 @@ async function fileUnder($: EngineInterface, file: string, hub: string): Promise
   waiting[started.agentId] = { file, kind: 'apply' }
 }
 
-async function finishAgent($: EngineInterface, file: string, kind: 'ask' | 'apply', answer: string): Promise<void> {
+async function finishAgent(
+  $: EngineInterface,
+  file: string,
+  kind: 'ask' | 'apply' | 'save',
+  answer: string,
+): Promise<void> {
+  if (kind === 'save') {
+    const saved = /^SAVED:\s*(.+)$/im.exec(answer)?.[1]?.trim()
+    const skipped = /^SKIPPED:\s*(.+)$/im.exec(answer)?.[1]?.trim()
+    await setAsk($, file, {
+      kind,
+      status: saved !== undefined ? 'done' : 'failed',
+      text: saved !== undefined ? `saved as ${saved.split('/').pop()}` : `not saved: ${skipped ?? 'no clear answer'}`.slice(0, 140),
+      hub: null,
+    })
+    await refresh($)
+    return
+  }
   if (kind === 'apply') {
     const ok = /FILED:\s*ok/i.test(answer)
     const why = /FILED:\s*failed\s*\|\s*(.*)$/im.exec(answer)?.[1] ?? ''
@@ -117,6 +134,39 @@ async function finishAgent($: EngineInterface, file: string, kind: 'ask' | 'appl
   const hub = m !== null && m[1].toLowerCase() !== 'none' ? m[1] : null
   const reason = (m?.[2] ?? '').trim() || (m === null ? 'no clear answer' : '')
   await setAsk($, file, { kind, status: 'done', text: reason.slice(0, 140), hub })
+}
+
+// An orphaned draft's finalize already ran, so its work is saved (or was judged not worth saving):
+// move it aside rather than delete it, as the finalize hook does for skipped drafts.
+async function archiveDraft($: EngineInterface, path: string): Promise<void> {
+  const dir = path.slice(0, path.lastIndexOf('/')) + '/.superseded'
+  await $.process.run(['mkdir', '-p', dir], { timeoutMs: 10000 })
+  await $.process.run(['mv', path, dir + '/'], { timeoutMs: 10000 })
+  await refresh($)
+}
+
+async function saveDraft($: EngineInterface, sid: string, path: string): Promise<void> {
+  const key = `draft-${sid}`
+  await setAsk($, key, { kind: 'save', status: 'running', text: '', hub: null })
+  const started = await $.agent.spawn({
+    subagentType: 'general-purpose',
+    description: 'Save a draft as a summary',
+    prompt:
+      `The user clicked "save as summary" on a leftover session draft that was never finalized: ${path}. ` +
+      `Read it. Following the second-brain skill's "save session summary" operation (~/.claude/skills/second-brain/SKILL.md): ` +
+      `the transcript is not available, so write a short summary built ONLY from what the draft says, inventing nothing, ` +
+      `and end its Reference section with a line saying it was reconstructed from a running draft. ` +
+      `Use the draft file's modification date as the note's date. Pick one real hub from list_taxonomy.py, never an invented one; ` +
+      `if none fits, stop. Check Claude Archive/Sessions/ for an existing summary that already covers the same work, and if one does, write nothing. ` +
+      `Never overwrite an existing file. Write the note to Claude Archive/Sessions/<date>-<slug>.md, link it from the hub with add_session_to_hub.py, ` +
+      `then run validate.py and fix any errors. Only after validation passes, move the draft into a .superseded folder next to it (mkdir -p first). ` +
+      `End with exactly one line: "SAVED: <path>" or "SKIPPED: <one-line reason>". Keep the reply under 80 words.`,
+  })
+  if (started.deny !== undefined || started.agentId === undefined) {
+    await setAsk($, key, { kind: 'save', status: 'failed', text: started.deny ?? 'The subagent did not start.', hub: null })
+    return
+  }
+  waiting[started.agentId] = { file: key, kind: 'save' }
 }
 
 async function rebuildDashboard($: EngineInterface, helpers: string): Promise<void> {
@@ -329,15 +379,44 @@ export const register: Register = on => {
 
         <Box flexDirection="column" borderStyle="round" borderColor={stuck > 0 ? CORAL : SLATE} paddingX={1}>
           <Text><Text bold color={INK}>DRAFTS </Text><Text bold color={stuck > 0 ? CORAL : MINT}>{stuck > 0 ? `${stuck} stuck` : 'clean'}</Text></Text>
-          {s.drafts.map(d => (
-            <Box key={d.sid}>
-              <Text wrap="truncate-end">
-                <Text color={stateColor(d.state)}>● {d.state.padEnd(10)}</Text>
-                <Text color={SLATE}> {d.sid}  </Text>
-              </Text>
-              {isStuck(d.state) && <Button key={`draft-${d.sid}`} dimColor label="open" onPress={() => openTarget($, d.path)} />}
-            </Box>
-          ))}
+          {s.drafts.map(d => {
+            const ask = tr.asks[`draft-${d.sid}`]
+            const stuckHere = isStuck(d.state)
+
+            return (
+              <Box key={d.sid} flexDirection="column">
+                <Box gap={2}>
+                  <Box flexGrow={1} flexShrink={1} minWidth={0}>
+                    <Text wrap="truncate-end">
+                      <Text color={stateColor(d.state)}>● {d.state.padEnd(10)}</Text>
+                      <Text color={SLATE}> {d.sid}</Text>
+                    </Text>
+                  </Box>
+                  {stuckHere && (
+                    <Box flexShrink={0} gap={2}>
+                      {d.state === 'orphaned' ? (
+                        <Button key={`archive-${d.sid}`} label="archive" onPress={() => archiveDraft($, d.path)} />
+                      ) : (
+                        ask?.status !== 'running' && (
+                          <Button key={`save-${d.sid}`} label="save as summary" onPress={() => saveDraft($, d.sid, d.path)} />
+                        )
+                      )}
+                      <Button key={`draft-${d.sid}`} dimColor label="open" onPress={() => openTarget($, d.path)} />
+                    </Box>
+                  )}
+                </Box>
+                {stuckHere && <Text wrap="truncate-end" color={SLATE}>  {d.note}</Text>}
+                {ask !== undefined && ask.status === 'running' && <Text color={AMBER}>  saving…</Text>}
+                {ask !== undefined && ask.status === 'done' && <Text color={MINT}>  ✓ {ask.text}</Text>}
+                {ask !== undefined && ask.status === 'failed' && (
+                  <Box gap={2} paddingLeft={2}>
+                    <Text color={CORAL} wrap="truncate-end">{ask.text}</Text>
+                    <Button key={`clear-draft-${d.sid}`} dimColor label="dismiss" onPress={() => clearAsk(`draft-${d.sid}`)} />
+                  </Box>
+                )}
+              </Box>
+            )
+          })}
         </Box>
 
         <Box flexDirection="column" borderStyle="round" borderColor={SLATE} paddingX={1}>

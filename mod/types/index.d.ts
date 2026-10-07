@@ -23,7 +23,7 @@ export type TriageResult = {
   filed: TriageItem[]
 }
 export type TriageAsk = {
-  kind: 'ask' | 'apply'
+  kind: 'ask' | 'apply' | 'save'
   status: 'running' | 'done' | 'failed'
   text: string
   hub: string | null
