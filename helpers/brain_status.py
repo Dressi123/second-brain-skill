@@ -81,6 +81,10 @@ DRAFT_STALE_AFTER = timedelta(hours=2)
 # session as 'crashed', which is exactly what happened on 2026-08-28.
 FINALIZE_GRACE = timedelta(minutes=20)
 
+# A draft modified this long after its session's last finalize was rewritten by
+# a resumed session; see read_drafts().
+RESUMED_AFTER = timedelta(minutes=3)
+
 
 def log_ts(line: str):
     """Leading '%Y-%m-%d %H:%M:%S' written by the hooks' `date '+%F %T'`.
@@ -129,11 +133,20 @@ def read_drafts():
     for p in sorted(drafts_dir.glob("*.md")):
         sid = p.stem
         try:
-            age = now - datetime.fromtimestamp(p.stat().st_mtime)
+            mtime = datetime.fromtimestamp(p.stat().st_mtime)
         except OSError:
             continue
+        age = now - mtime
         invoked = last_ts_containing(log_text, f"invoking claude -p to finalize {sid}")
         done = last_ts_containing(log_text, f"SessionEnd: done for {sid}")
+        # A draft written well after its session's last finalize is a resumed
+        # session (same id, new life): that finalize is history, not this draft's
+        # end. The slack covers the Stop hook's last async update landing just
+        # after a finalize, which really is an orphan.
+        last_end = max((t for t in (invoked, done) if t), default=None)
+        resumed = bool(last_end) and mtime - last_end > RESUMED_AFTER
+        if resumed:
+            invoked = done = None
         if invoked and done and done >= invoked:
             state, note = "orphaned", "finalized, but the draft was left behind"
         elif invoked and now - invoked <= FINALIZE_GRACE:
@@ -147,6 +160,8 @@ def read_drafts():
             # machine never logged ran elsewhere, so its finalize can't be judged here.
             if sid not in log_text:
                 state, note = "stale", "draft from another machine, so this machine's log can't say"
+            elif resumed:
+                state, note = "stale", "resumed after an earlier finalize, not finalized since"
             else:
                 state, note = "stale", "no finalize ever ran"
         else:
