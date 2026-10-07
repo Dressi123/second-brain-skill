@@ -112,7 +112,8 @@ def read_drafts():
       crashed    - finalize invoked, never completed, and too old to still be
                    running
       finalizing - finalize invoked within FINALIZE_GRACE: still in flight
-      stale      - no finalize ever ran, and the file has stopped changing
+      stale      - no finalize ever ran (or, if this machine never logged the
+                   session, it ran elsewhere), and the file has stopped changing
       active     - no finalize yet but written recently: a live session, fine
 
     'done for' is compared by position against the last invoke rather than
@@ -142,7 +143,12 @@ def read_drafts():
         elif done:
             state, note = "orphaned", "finalized, but the draft was left behind"
         elif age > DRAFT_STALE_AFTER:
-            state, note = "stale", "no finalize ever ran"
+            # The log is per machine but the vault syncs: a session id this
+            # machine never logged ran elsewhere, so its finalize can't be judged here.
+            if sid not in log_text:
+                state, note = "stale", "draft from another machine, so this machine's log can't say"
+            else:
+                state, note = "stale", "no finalize ever ran"
         else:
             state, note = "active", "live session in progress"
         out.append({"sid": sid, "state": state, "note": note, "age": age, "path": p})
