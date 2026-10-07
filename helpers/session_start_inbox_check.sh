@@ -166,19 +166,9 @@ parts = [
     'The user has already been shown this vault status as the session opened: '
     + '; '.join(shown) + '.'
 ]
-if options:
-    options.append('Not now: skip all of it and go straight to their message')
-    parts.append(
-        'Before doing anything else in your first reply, call AskUserQuestion '
-        '(header \"Second brain\", multiSelect true) asking which of these to '
-        'do, one option per line below, label before the colon and '
-        'description after. Then do what they picked, and then handle their '
-        'first message. Do not run any of these unasked, and do not ask again '
-        'later in the session.\n' + '\n'.join(options)
-    )
+# The session-start-choice mod asks these as a dialog before the first prompt.
 
 print(json.dumps({
-    'systemMessage': 'Second brain: ' + ' · '.join(shown),
     'hookSpecificOutput': {
         'hookEventName': 'SessionStart',
         'additionalContext': ' '.join(parts),

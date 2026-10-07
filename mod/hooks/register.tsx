@@ -3,7 +3,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { TriageResult, TriageState, VaultSnapshot } from '../types'
 import { SNAPSHOT_PY } from './snapshot'
-import { buildCapture, checkVaultWrite } from './vault'
+import { buildChoices, buildCapture, checkVaultWrite, picked, question } from './vault'
 
 const PANE = 'vault'
 const snap = atom({ plugin: 'second-brain-mod', key: 'snap' } as const, null)
@@ -192,8 +192,23 @@ export const register: Register = on => {
       await refresh($)
     }
     $.clock.every(60000, () => refresh($))
+    const result = await next(e)
 
-    return next(e)
+    // Offer the choices in a dialog before the first prompt, instead of the model asking in its first reply.
+    const status = await read($, snap)
+    const choices = e.isInteractive && status !== null ? buildChoices({ inbox: status.inbox.length, hub: status.hub }) : []
+    if (choices.length > 0) {
+      try {
+        const { question: q, options } = question(choices)
+        const answer = await $.ui.ask(q, { options, header: 'Second brain', multiSelect: true })
+        const prompts = picked(answer, choices).map(c => c.prompt)
+        if (prompts.length > 0) void $.prompt.submit({ text: prompts.join(' Then: ') })
+      } catch {
+        // dismissed dialog: the session just opens as usual
+      }
+    }
+
+    return result
   })
 
   on('turn.complete', async ($, e, next) => {

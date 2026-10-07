@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { buildCapture, checkVaultWrite, slugify } from './vault'
+import { NOT_NOW, buildCapture, buildChoices, checkVaultWrite, picked, question, slugify } from './vault'
 
 const V = '/Users/x/Vault'
 const GOOD = '---\ndate: 2026-10-06\ntags: [a]\n---\n\n# T\n'
@@ -38,4 +38,13 @@ test('capture builds capture-style frontmatter and a dated filename', async () =
 
 test('slugify falls back for text with no letters', async () => {
   expect(slugify('!!!')).toBe('capture')
+})
+
+test('session-start choices: only what applies, Not now always last, labels matched exactly', () => {
+  expect(buildChoices({ inbox: 0, hub: null })).toEqual([])
+  const choices = buildChoices({ inbox: 2, hub: 'h' })
+  expect(question(choices).options).toEqual(['Load h context', 'Triage inbox (2)', NOT_NOW])
+  expect(picked('Load h context, Triage inbox (2)', choices)).toHaveLength(2)
+  expect(picked(NOT_NOW, choices)).toEqual([])
+  expect(picked('typed under Other', choices)).toEqual([])
 })

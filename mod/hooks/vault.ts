@@ -41,3 +41,41 @@ export function buildCapture(selected: string, when: Date): { filename: string; 
     `# ${title}\n\n${body}\n`
   return { filename, text }
 }
+
+export type Choice = { label: string; prompt: string }
+
+export const NOT_NOW = 'Not now'
+
+// What is worth offering as the session opens. The dashboard needs no choice:
+// the mod regenerates a stale one itself at session start.
+export function buildChoices(s: { inbox: number; hub: string | null }): Choice[] {
+  const out: Choice[] = []
+  if (s.hub !== null) {
+    out.push({
+      label: `Load ${s.hub} context`,
+      prompt: `Run the second-brain skill's "load context" operation for the [[${s.hub}]] hub.`,
+    })
+  }
+  if (s.inbox > 0) {
+    out.push({
+      label: `Triage inbox (${s.inbox})`,
+      prompt: `Delegate the ${s.inbox} Desktop/iOS captures in the vault Inbox to the inbox-triage agent (Sonnet), per the second-brain skill's "triage inbox" operation.`,
+    })
+  }
+
+  return out
+}
+
+export function question(choices: Choice[]): { question: string; options: string[] } {
+  return {
+    question: 'Second brain: what should I do before we start?',
+    options: [...choices.slice(0, 3).map(c => c.label), NOT_NOW],
+  }
+}
+
+// ask() comma-joins a multi-select answer, and "Other" is free text: match labels exactly.
+export function picked(answer: string, choices: Choice[]): Choice[] {
+  const parts = answer.split(',').map(p => p.trim())
+
+  return choices.filter(c => parts.includes(c.label))
+}
