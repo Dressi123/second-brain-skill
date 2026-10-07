@@ -199,6 +199,13 @@ if [ "$DRY_RUN" = 1 ]; then
   exit 0
 fi
 
+# Claude Code subagents live in ~/.claude/agents; link ours so they track the repo.
+mkdir -p "$HOME/.claude/agents"
+for agent in "$SKILL_DIR"/claude-agents/*.md; do
+  ln -sfn "$agent" "$HOME/.claude/agents/$(basename "$agent")"
+done
+echo "Linked Claude Code agents from $SKILL_DIR/claude-agents"
+
 resolved=$(python3 "$SKILL_DIR/helpers/vault_paths.py")
 if [ "$resolved" != "$VAULT" ]; then
   echo "WARNING -- the helpers resolve the vault to:"

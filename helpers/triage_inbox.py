@@ -17,8 +17,15 @@ only judgment, so that is all this decides:
   3. Anything else is left in Inbox/ for the model / Andreas to decide, exactly
      as SKILL.md's "triage inbox" says: never force a fit, never invent a hub.
 
-Captures without a `source:` key (hand-made, not from capture_note) are never
-auto-filed; validate.py can't tell them from session notes.
+Captures without a `source:` key (hand-made, not from capture_note) need
+confidence >= HANDMADE_MIN_CONF, and are validated with `--mode capture`
+because validate.py can't tell them from session notes on its own.
+
+A capture whose filename is already in Notes/ is a re-capture of a filed note,
+so its hub is known and Jev is skipped. Identical: the Inbox copy is dropped.
+Every line of the filed body still present: the body is replaced (filed
+frontmatter kept). Otherwise it goes to review with the lines only the filed
+copy has, since merging prose is a judgment call.
 
 Runs under uv (dependencies declared above, cached after the first run), so
 invoke it directly rather than with `python3`. Key: $TYPESAFE_API_KEY, else
@@ -47,6 +54,8 @@ from vault_paths import VAULT  # noqa: E402
 # Chosen with --backtest: Jev's wrong picks scored below it, its picks above it
 # matched the hub the capture was filed under.
 JEV_MIN_CONF = 0.8
+# Hand-made notes skipped capture_note's tooling, so ask for more certainty.
+HANDMADE_MIN_CONF = 0.95
 BODY_CHARS = 6_000
 # TypeSafe's launch price (2026-09-15): input tokens only, output is free.
 USD_PER_M_INPUT = 0.042
@@ -135,6 +144,50 @@ def decide(cap, hubs, client, strip_hub_tags=False):
     return choice, f"jev {conf:.2f}", conf
 
 
+def body_lines(body):
+    return [l.rstrip() for l in body.splitlines() if l.strip()]
+
+
+def check_refiled(cap):
+    """For a capture whose name is already in Notes/: -> (action, detail).
+
+    action is "same", "update" or "diverged"; None if nothing is filed under it."""
+    dest = VAULT / "Notes" / cap["path"].name
+    if not dest.exists():
+        return None, None
+    filed = parse(dest)
+    m = re.search(r"^(project|topic):\s*(\S+)", filed["front"], re.M)
+    if not m:
+        return "diverged", "same name already in Notes/, but it has no project:/topic:"
+    hub_id = m.group(2)
+    old, new = body_lines(filed["body"]), body_lines(cap["body"])
+    if old == new:
+        return "same", hub_id
+    missing = [l for l in old if l not in set(new)]
+    if not missing:
+        return "update", hub_id
+    shown = "\n".join(f"        | {l[:160]}" for l in missing)
+    return "diverged", f"{hub_id}; re-capture of a filed note, lines only the filed copy has:\n{shown}"
+
+
+def apply_refiled(cap, action, hub):
+    """Drop or update a re-capture. The filed note keeps its frontmatter and hub link."""
+    src = cap["path"]
+    dest = VAULT / "Notes" / src.name
+    filed = parse(dest)
+    if src.stem not in hub[4].read_text(encoding="utf-8"):
+        raise RuntimeError(f"{hub[2]} does not link to the filed copy; fix that by hand")
+    if action == "update":
+        new_text = "---\n" + filed["front"] + "\n---\n" + cap["body"]
+        dest.write_text(new_text, encoding="utf-8")
+        out = subprocess.run([sys.executable, str(HERE / "validate.py"), "--mode", "capture", str(dest)],
+                             capture_output=True, text=True)
+        if "ERRORS:" in out.stdout + out.stderr:
+            dest.write_text(filed["text"], encoding="utf-8")
+            raise RuntimeError("validation failed, rolled back:\n" + (out.stdout + out.stderr).strip())
+    src.unlink()
+
+
 def first_sentence(body):
     for para in body.split("\n\n"):
         p = para.strip()
@@ -153,7 +206,10 @@ def file_capture(cap, hub):
 
     # 1. frontmatter: exactly one of project:/topic:
     front = re.sub(r"^(project|topic):.*\n?", "", cap["front"] + "\n", flags=re.M).rstrip("\n")
-    lines = front.split("\n")
+    lines = front.split("\n") if front else []
+    if not any(l.startswith("date:") for l in lines):
+        m = re.match(r"(\d{4}-\d{2}-\d{2})", src.name)
+        lines.insert(0, f"date: {m.group(1) if m else date.today().isoformat()}")
     at = next((i + 1 for i, l in enumerate(lines) if l.startswith("date:")), 0)
     lines.insert(at, f"{kind}: {hub_id}")
     # ...and the matching `topic/<id>` tag validate.py expects on filed notes
@@ -167,8 +223,7 @@ def file_capture(cap, hub):
     new_text = "---\n" + "\n".join(lines) + "\n---\n" + cap["body"]
 
     # 2. hub back-link under ## Captures (created above the first other ## if missing)
-    m = re.search(r"^date:\s*(\S+)", cap["front"], re.M)
-    when = m.group(1) if m else date.today().isoformat()
+    when = re.search(r"^date:\s*(\S+)", "\n".join(lines), re.M).group(1)
     summary = first_sentence(cap["body"])
     entry = f"- {when} — [[{src.stem}|{cap['title']}]]" + (f" — {summary}" if summary else "")
     old_hub = hub_text = hub_path.read_text(encoding="utf-8")
@@ -187,7 +242,8 @@ def file_capture(cap, hub):
     hub_path.write_text(hub_text, encoding="utf-8")
     dest.write_text(new_text, encoding="utf-8")
     src.unlink()
-    out = subprocess.run([sys.executable, str(HERE / "validate.py"), str(dest)], capture_output=True, text=True)
+    out = subprocess.run([sys.executable, str(HERE / "validate.py"), "--mode", "capture", str(dest)],
+                         capture_output=True, text=True)
     if "ERRORS:" in out.stdout + out.stderr:
         src.write_text(cap["text"], encoding="utf-8")
         dest.unlink()
@@ -244,9 +300,26 @@ def run(hubs, client):
     report = {"filed": [], "proposed": [], "review": []}
     for p in sorted((VAULT / "Inbox").glob("*.md")):
         cap = parse(p)
-        hub, how, _ = decide(cap, hubs, client)
-        if hub and not cap["has_source"]:
-            report["review"].append((p.name, f"would be {hub} ({how}), but no source: key"))
+        action, detail = check_refiled(cap)
+        if action == "diverged":
+            report["review"].append((p.name, detail))
+            continue
+        if action:
+            what = "identical to the filed copy, drop it" if action == "same" else "newer version of the filed copy, replace its body"
+            if detail not in by_id:
+                report["review"].append((p.name, f"{what}, but its hub {detail} no longer exists"))
+            elif apply:
+                try:
+                    apply_refiled(cap, action, by_id[detail])
+                    report["filed"].append((p.name, f"{detail} ({what})"))
+                except Exception as e:
+                    report["review"].append((p.name, f"{detail} ({what}), failed: {e}"))
+            else:
+                report["proposed"].append((p.name, f"{detail} ({what})"))
+            continue
+        hub, how, conf = decide(cap, hubs, client)
+        if hub and not cap["has_source"] and conf < HANDMADE_MIN_CONF:
+            report["review"].append((p.name, f"would be {hub} ({how}), but hand-made notes need {HANDMADE_MIN_CONF}"))
             continue
         if not hub:
             report["review"].append((p.name, how))

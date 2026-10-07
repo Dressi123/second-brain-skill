@@ -155,8 +155,9 @@ if hub_name:
     options.append(f'Load {hub_name} context: run the second-brain skill\'s '
                    f'\"load context\" operation for the [[{hub_name}]] hub')
 if inbox_count:
-    options.append(f'Triage inbox: file the {inbox_count} Desktop/iOS captures '
-                   'via the second-brain skill\'s \"triage inbox\" operation')
+    options.append(f'Triage inbox: delegate the {inbox_count} Desktop/iOS captures '
+                   'to the inbox-triage agent (Sonnet), per the second-brain skill\'s '
+                   '\"triage inbox\" operation')
 if status_nudge:
     options.append('Regenerate dashboard: run python3 '
                    '~/.claude/skills/second-brain/helpers/brain_status.py')
