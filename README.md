@@ -270,7 +270,29 @@ Builds an HTML dashboard and opens it. Read the **Session drafts** panel:
 
 Anything but `active` is a leftover. Nothing sweeps `.drafts/`, so delete those
 once you've confirmed the work got captured. `helpers/session_hooks.log` has the
-raw trail.
+raw trail. The log is per machine but the vault syncs, so a `stale` draft from a
+session that ran on your other machine is labelled as such: this machine's log
+can't say whether it finalized.
+
+### The Claude Code mod
+
+`mod/` is a Claude Code mod (a plugin of function hooks) that puts the vault inside
+the session instead of in a browser tab. `bootstrap.sh` links it into
+`~/.claude/skills/`, where Claude Code loads it; restart Claude Code once after
+bootstrapping. It reuses the helpers above, so there is no second copy of the vault
+logic.
+
+| You get | Where |
+|---|---|
+| a status band above the prompt: inbox count, dashboard freshness, hub, stuck drafts | always on; `/vault` brings it back after Hide |
+| a pane with the inbox, hub sessions, drafts and hook health | `/vault` |
+| click-to-triage: `Triage inbox` runs `triage_inbox.py` and shows each proposal inline; `triage` on a row asks an `inbox-triage` subagent about that one capture | the pane |
+| saving the text you highlighted to `Inbox/` | `/vault-capture` (fullscreen mode) |
+| a guard that denies a `Write` into the vault missing `date:` frontmatter | automatic; fails open |
+| the HTML dashboard rebuilt for you when stale | once per session |
+
+It is also a marketplace entry: `/plugin install second-brain-mod --marketplace
+Dressi123/second-brain-skill`. See `mod/README.md` to develop it.
 
 ---
 
@@ -466,6 +488,7 @@ design. Check `~/.second-brain-git/sync.log`, resolve by hand, and it resumes.
 ```
 SKILL.md            the instructions Claude reads, the actual product
 bootstrap.sh        makes this clone yours
+mod/                Claude Code mod: status band, /vault pane, capture, write guard
 helpers/            vault_index · search_notes · list_taxonomy · validate
                     new_hub · add_session_to_hub · brain_status
                     vault_git_sync + the four session hooks

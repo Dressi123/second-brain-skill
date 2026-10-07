@@ -253,6 +253,23 @@ Same rule as saving session summaries: never invent a project/topic ID to make s
 
 ---
 
+## The Claude Code mod (`/vault`)
+
+`mod/` holds a Claude Code mod that `bootstrap.sh` links into `~/.claude/skills/`. It
+shows the vault's status above the prompt and in a `/vault` pane, saves highlighted
+text to `Inbox/` with `/vault-capture`, and denies a `Write` into `Inbox/`,
+`Claude Archive/Sessions/`, `Notes/` or `Daily/` that has no `date:` frontmatter. If
+that guard denies one of your writes, add the frontmatter and write again; don't work
+around it.
+
+Its pane can start triage without going through you: `Triage inbox` runs
+`triage_inbox.py`, and `triage` on a row spawns the `inbox-triage` agent for one
+capture, asking it to end with a `HUB: <id> | <reason>` line. Filing is a second spawn
+that asks for a final `FILED: ok` line. Keep those final-line formats if you change the
+agent: the pane parses them. The mod runs the helpers rather than copying
+their logic, so a change to `triage_inbox.py`'s PROPOSED/REVIEW/FILED output or to
+`brain_status.py`'s data functions can break it. Run `claude plugin test mod` after.
+
 ## Hygiene
 
 - Wikilinks use file basename only: `[[Travel App]]`, never the full path.

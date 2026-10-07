@@ -1,0 +1,7 @@
+{
+  "name": "second-brain-mod",
+  "version": "0.1.0",
+  "description": "Second brain in Claude Code: vault status band, /vault pane with click-to-triage, /vault-capture for selected text, vault write guard, dashboard auto-refresh.",
+  "author": { "name": "Andreas" },
+  "types": "./types/index.d.ts"
+}

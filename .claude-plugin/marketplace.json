@@ -1,0 +1,12 @@
+{
+  "name": "second-brain",
+  "owner": { "name": "Andreas" },
+  "description": "Claude Code mods for the second-brain skill.",
+  "plugins": [
+    {
+      "name": "second-brain-mod",
+      "source": "./mod",
+      "description": "Vault status band, /vault pane with click-to-triage, /vault-capture, vault write guard."
+    }
+  ]
+}

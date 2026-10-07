@@ -206,6 +206,12 @@ for agent in "$SKILL_DIR"/claude-agents/*.md; do
 done
 echo "Linked Claude Code agents from $SKILL_DIR/claude-agents"
 
+# The Claude Code mod (status band, /vault pane, /vault-capture, write guard) is a
+# plugin folder; Claude Code loads one that sits directly under ~/.claude/skills/,
+# so link ours there and it tracks the repo like the agents above.
+ln -sfn "$SKILL_DIR/mod" "$HOME/.claude/skills/second-brain-mod"
+echo "Linked the Claude Code mod from $SKILL_DIR/mod"
+
 resolved=$(python3 "$SKILL_DIR/helpers/vault_paths.py")
 if [ "$resolved" != "$VAULT" ]; then
   echo "WARNING -- the helpers resolve the vault to:"
